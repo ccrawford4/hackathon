@@ -18,6 +18,11 @@ import {
     AccountCircle,
 } from '@mui/icons-material';
 import { useParams } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { Meeting, TagWithDetails } from '@/lib/API';
+import { getItem } from '@/lib/queries';
+import { useDatabase } from '@/app/providers/AppContext';
+import { getMeetingTags } from '@/lib/helpers';
 
 const darkTheme = createTheme({
     palette: {
@@ -29,29 +34,24 @@ const darkTheme = createTheme({
     },
 });
 
-interface TranscriptionDetail {
-    id: number;
-    title: string;
-    tag: string;
-    content: string;
-}
-
-export default function TranscriptionDetail() {
+export default function MeetingDetail() {
     const params = useParams();
+    const db = useDatabase();
     const id = params.id;
+   const [meeting, setMeeting] = useState<Meeting | null>(null);
+   const [tags, setTags] = useState<TagWithDetails[]>([]);
 
-    // Sample data - replace with actual data fetching
-    const transcription: TranscriptionDetail = {
-        id: Number(id),
-        title: "Hackathon",
-        tag: "Tag 1",
-        content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-    Phasellus vel iaculis ligula, vel laoreet enim. Mauris vitae augue porttitor, 
-    sollicitudin ipsum in, facilisis quam. Pellentesque elementum pretium lacus, 
-    vel porta nunc semper in. Sed vel nulla in ligula aliquet tristique sit amet et dolor. 
-    Donec sed congue elit, nec feugiat arcu. Maecenas est augue, ultricies eu pellentesque vel, 
-    aliquet quis est.`
-    };
+    const loadMeetingDetails = useCallback(async () => {
+        const meeting = await getItem(db, 'meetings', id as string);
+        const tags = await getMeetingTags(db, meeting.id);
+        setMeeting(meeting as Meeting);
+        setTags(tags as TagWithDetails[]);
+    }, [db, id]);
+
+    useEffect(() => {
+        loadMeetingDetails();
+    }, [loadMeetingDetails]);
+
 
     return (
         <ThemeProvider theme={darkTheme}>
@@ -73,17 +73,23 @@ export default function TranscriptionDetail() {
 
                 <Container maxWidth="sm" sx={{ mt: 4 }}>
                     <Typography variant="h4" gutterBottom>
-                        {transcription.title}
+                        {meeting?.data.title}
                     </Typography>
 
-                    <Chip
-                        label={transcription.tag}
-                        sx={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            borderRadius: '16px',
-                            mb: 3
-                        }}
-                    />
+                    {tags.map((tag) => {
+                        return (
+                            <Chip
+                                key={tag.id}
+                                label={tag.data.name}
+                                sx={{
+                                    backgroundColor: tag.data.color,
+                                    borderRadius: '16px',
+                                    mr: 1,
+                                    mb: 1
+                                }}
+                            />
+                        );
+                    })}
 
                     <Typography
                         variant="body1"
@@ -93,7 +99,7 @@ export default function TranscriptionDetail() {
                             letterSpacing: '0.00938em',
                         }}
                     >
-                        {transcription.content}
+                        {meeting?.data.summary}
                     </Typography>
                 </Container>
             </Box>

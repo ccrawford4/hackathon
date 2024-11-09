@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useDatabase } from "@/app/providers/AppContext";
-import { listAll, validTenant } from "@/lib/queries";
-import { Tenant } from "@/lib/API";
-import setObject from "@/lib/mutations";
+import { getTenant } from "@/lib/queries";
+import { createObject } from "@/lib/mutations";
 import {
   Box,
   CssBaseline,
@@ -14,17 +13,18 @@ import {
   TextField,
   Button,
   Alert,
-} from '@mui/material';
-import { Google } from '@mui/icons-material';
-import { darkTheme } from '@/app/theme/darkTheme';
+} from "@mui/material";
+import { Google } from "@mui/icons-material";
+import { darkTheme } from "@/app/theme/darkTheme";
+import { QueryInput } from "@/lib/API";
 
 export default function SignIn() {
-  const { user, signInWithGoogle } = useAuth();
+  const { user, signInWithGoogle, setTenantId } = useAuth();
   const router = useRouter();
   const db = useDatabase();
 
   // State to handle the tenant input and validation
-  const [tenant, setTenant] = useState<string>("");
+  const [tenantName, setTenantName] = useState<string>("");
   const [tenantValidated, setTenantValidated] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -35,17 +35,13 @@ export default function SignIn() {
     }
   }, [user, router]);
 
-  const validateTenant = async () => {
-    const tenantsData = await listAll(db, "tenants");
-    return validTenant(tenant, tenantsData as [string, Tenant][]);
-  };
-
   // Function to handle tenant name validation
   const handleTenantSubmit = async () => {
     try {
-      const validTenant = await validateTenant();
-
-      if (validTenant) {
+      const tenantObject = await getTenant(db, tenantName);
+      if (tenantObject) {
+        console.log("Tenant ID: ", tenantObject.id);
+        setTenantId(tenantObject.id);
         setTenantValidated(true);
         setErrorMessage("");
       } else {
@@ -59,7 +55,7 @@ export default function SignIn() {
     }
   };
 
-  const handleSignInFlow = () => {
+  const handleSignInFlow = async () => {
     if (tenantValidated) {
       signInWithGoogle();
     } else {
@@ -69,16 +65,26 @@ export default function SignIn() {
 
   const handleTenantRegister = async () => {
     try {
-      const currentTenant = await validateTenant();
+      const currentTenant = await getTenant(db, tenantName);
 
       if (currentTenant) {
         setErrorMessage("Tenant name already exists. Please try again.");
       } else {
-        await setObject(db, "tenants", { name: tenant });
+        const tenantObject: QueryInput = {
+          data: {
+            name: tenantName,
+          },
+        };
+
+        const response = await createObject(db, "tenants", tenantObject);
+        if (!response) {
+          throw new Error("Error creating tenant.");
+        }
+
+        setTenantId(response.id)
         setTenantValidated(true);
         setErrorMessage("");
       }
-
     } catch (error) {
       console.error("Error registering tenant: ", error);
       setErrorMessage("Error registering tenant. Please try again.");
@@ -93,7 +99,10 @@ export default function SignIn() {
           <Box className="p-8 lg:p-16 flex items-center justify-center">
             <Box className="w-full max-w-md">
               <Box className="mb-8">
-                <Typography variant="h3" className="text-white text-4xl font-bold mb-4">
+                <Typography
+                  variant="h3"
+                  className="text-white text-4xl font-bold mb-4"
+                >
                   Get Started with Us
                 </Typography>
                 <Typography className="text-gray-400">
@@ -102,19 +111,45 @@ export default function SignIn() {
               </Box>
 
               <Box className="mt-12">
-                <Box className={`flex items-center p-4 rounded-lg mb-3 ${!tenantValidated ? 'bg-white' : 'bg-gray-800'}`}>
-                  <Box className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${!tenantValidated ? 'bg-black text-white' : 'bg-gray-700 text-gray-300'}`}>
+                <Box
+                  className={`flex items-center p-4 rounded-lg mb-3 ${
+                    !tenantValidated ? "bg-white" : "bg-gray-800"
+                  }`}
+                >
+                  <Box
+                    className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                      !tenantValidated
+                        ? "bg-black text-white"
+                        : "bg-gray-700 text-gray-300"
+                    }`}
+                  >
                     1
                   </Box>
-                  <Typography className={!tenantValidated ? 'text-black' : 'text-gray-300'}>
+                  <Typography
+                    className={
+                      !tenantValidated ? "text-black" : "text-gray-300"
+                    }
+                  >
                     Enter tenant name
                   </Typography>
                 </Box>
-                <Box className={`flex items-center p-4 rounded-lg mb-3 ${tenantValidated ? 'bg-white' : 'bg-gray-800'}`}>
-                  <Box className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${tenantValidated ? 'bg-black text-white' : 'bg-gray-700 text-gray-300'}`}>
+                <Box
+                  className={`flex items-center p-4 rounded-lg mb-3 ${
+                    tenantValidated ? "bg-white" : "bg-gray-800"
+                  }`}
+                >
+                  <Box
+                    className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                      tenantValidated
+                        ? "bg-black text-white"
+                        : "bg-gray-700 text-gray-300"
+                    }`}
+                  >
                     2
                   </Box>
-                  <Typography className={tenantValidated ? 'text-black' : 'text-gray-300'}>
+                  <Typography
+                    className={tenantValidated ? "text-black" : "text-gray-300"}
+                  >
                     Sign in with provider
                   </Typography>
                 </Box>
@@ -144,8 +179,8 @@ export default function SignIn() {
                   <TextField
                     fullWidth
                     label="Tenant Name"
-                    value={tenant}
-                    onChange={(e) => setTenant(e.target.value)}
+                    value={tenantName}
+                    onChange={(e) => setTenantName(e.target.value)}
                     className="bg-gray-800 rounded-lg"
                   />
 

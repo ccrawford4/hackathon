@@ -5,19 +5,15 @@ import {
   Box,
   CssBaseline,
   IconButton,
-  Paper,
   Toolbar,
   Typography,
-  Chip,
   ThemeProvider,
   createTheme,
-  Stack,
 } from "@mui/material";
 
 import { Search, Settings, AccountCircle } from "@mui/icons-material";
-import Link from "next/link";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDatabase } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
 import { Meeting } from "@/lib/API";
@@ -39,7 +35,7 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const database = useDatabase();
 
-  const loadPage = async () => {
+  const loadPage = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -54,7 +50,7 @@ export default function LandingPage() {
       for (const entry of result) {
         newMeetings.push({
           id: entry.id,
-          data: (entry.data as any),
+          data: entry.data as Meeting["data"],
         });
       }
 
@@ -64,11 +60,12 @@ export default function LandingPage() {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-  };
+
+  }, [database]);
 
   useEffect(() => {
     loadPage();
-  }, []);
+  }, [loadPage]);
 
   // TODO: Change to use a react spinner instead
   if (loading) {

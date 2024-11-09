@@ -23,3 +23,18 @@ export interface Meeting {
       preview?: string;
     };
   }
+
+  export interface MeetingTag {
+    meetingId: string;
+    tenantId: string;
+    tagId: string;
+  }
+  
+  export interface Tag {
+    color: string;
+    name: string;
+  }
+  
+  export interface TagWithDetails extends Tag {
+    id: string;
+  }

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useDatabase } from "@/app/providers/AppContext";
 import { listAll, validTenant } from "@/lib/queries";
-import { Tenant } from "@/lib/API";
 import setObject from "@/lib/mutations";
 import {
   Box,

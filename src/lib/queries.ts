@@ -1,5 +1,5 @@
 import { Database, ref, get } from 'firebase/database';
-import { Data, QueryResult, Tenant } from './API';
+import { QueryResult, Tenant } from './API';
 
 
 export async function listAll(db: Database, collection: string): Promise<QueryResult[]> {
@@ -15,9 +15,21 @@ export async function listAll(db: Database, collection: string): Promise<QueryRe
     }
 }
 
+export async function getItem(db: Database, collection: string, id: string): Promise<QueryResult> {
+    const databaseRef = ref(db, `${collection}/${id}`);
+    const snapshot = await get(databaseRef);
+
+    if (snapshot.exists()) {
+        const data = snapshot.val();
+        return { id: id, data: data };
+    } else {
+        return { id: id, data: {} };
+    }
+}
+
 export function validTenant(tenant: string, tenants: QueryResult[]) {
     for (const entry of tenants) {
-        if ((entry.data as any).name === tenant) {
+        if ((entry.data as Tenant).name === tenant) {
             return true;
         }
     }

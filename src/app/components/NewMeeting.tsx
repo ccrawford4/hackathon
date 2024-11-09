@@ -6,13 +6,12 @@ import {
   Button,
   Chip,
 } from "@mui/material";
-import { User, Tag } from "@/lib/API";
-import { useEffect } from "react";
+import { CustomUser, Tag } from "@/lib/API";
 
 interface NewMeetingProps {
-  users: User[];
-  selectedUsers: User[];
-  setSelectedUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  users: CustomUser[];
+  selectedUsers: CustomUser[];
+  setSelectedUsers: React.Dispatch<React.SetStateAction<CustomUser[]>>;
   meetingName: string;
   addMeeting: boolean;
   setMeetingName: React.Dispatch<React.SetStateAction<string>>;
@@ -37,10 +36,6 @@ export default function NewMeeting(props: NewMeetingProps) {
     setTags,
     handleCreateMeeting,
   } = props;
-
-  useEffect(() => {
-    console.log("Available tags: ", availableTags);
-  }, []);
 
   return (
     <Modal open={addMeeting} onClose={() => setAddMeeting(false)}>
@@ -81,7 +76,7 @@ export default function NewMeeting(props: NewMeetingProps) {
                 const { key, ...chipProps } = tagProps;   // Destructure key and other props
             
                 return (
-                  <div key={index}>
+                  <div key={key}>
                     <Chip
                       label={option.data.name}
                       {...chipProps}  // Spread remaining props (excluding 'key')

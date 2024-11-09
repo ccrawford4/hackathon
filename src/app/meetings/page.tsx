@@ -14,12 +14,11 @@ import {
 import { Search, Settings, AccountCircle, Add } from "@mui/icons-material";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
-import { useAuth, useDatabase, useTenantId } from "../providers/AppContext";
+import { useAuth, useDatabase } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
-import { Meeting, MeetingUser, QueryInput, Tag, CustomUser } from "@/lib/API";
+import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
-import { createUUID } from "@/lib/helpers";
 import { createObject, createObjects } from "@/lib/mutations";
 
 const darkTheme = createTheme({
@@ -102,7 +101,7 @@ export default function LandingPage() {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-  }, [database]);
+  }, [tenantId, database]);
 
 
   useEffect(() => {

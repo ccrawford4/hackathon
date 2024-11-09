@@ -1,7 +1,7 @@
 import { set, ref } from "firebase/database";
 import { createUUID } from "./helpers";
 import { Database } from "firebase/database";
-import { QueryInput, QueryResult } from "./API";
+import { QueryInput } from "./API";
 
 export async function createObject(db: Database, collection: string, object: QueryInput) {
     const id = createUUID();

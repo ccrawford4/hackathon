@@ -80,9 +80,9 @@ export default function MeetingDetail() {
                         return (
                             <Chip
                                 key={tag.id}
-                                label={tag.name}
+                                label={tag.data.name}
                                 sx={{
-                                    backgroundColor: tag.color,
+                                    backgroundColor: tag.data.color,
                                     borderRadius: '16px',
                                     mr: 1,
                                     mb: 1

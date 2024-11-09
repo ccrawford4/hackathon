@@ -6,7 +6,7 @@ import {
   orderByChild,
   equalTo,
 } from "firebase/database";
-import { CustomUser, QueryResult, Tenant } from "./API";
+import { CustomUser, QueryResult } from "./API";
 
 export async function listAll(
   db: Database,
@@ -56,7 +56,7 @@ export async function listAll(
 //   }
 // }
 
-export async function getTenant(db: Database, name: string): Promise<{ id: string, data: any } | null> {
+export async function getTenant(db: Database, name: string): Promise<{ id: string, data: unknown } | null> {
   const tenantRef = ref(db, "tenants");
   const tenantQuery = query(
     tenantRef,

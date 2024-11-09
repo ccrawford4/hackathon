@@ -65,9 +65,9 @@ export default function MeetingCard(props: MeetingCardProps) {
           {tags.map((tag) => (
             <Chip
               key={tag.id}
-              label={tag.name}
+              label={tag.data.name}
               sx={{
-                backgroundColor: tag.color || "rgba(255, 255, 255, 0.1)",
+                backgroundColor: tag.data.color || "rgba(255, 255, 255, 0.1)",
                 borderRadius: "16px",
                 color: "white",
                 "& .MuiChip-label": {

@@ -14,13 +14,12 @@ import {
 import { Search, Settings, AccountCircle, Add } from "@mui/icons-material";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
-import { useAuth, useDatabase, useTenantId } from "../providers/AppContext";
+import { useAuth, useDatabase } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
 import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
-import { set } from "firebase/database";
 
 const darkTheme = createTheme({
   palette: {

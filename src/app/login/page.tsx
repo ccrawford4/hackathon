@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useDatabase } from '@/app/providers/AuthContext';
+import { useAuth, useDatabase } from '@/app/providers/AppContext';
 import { ref, get, set } from "firebase/database";
 
 export default function SignIn() {

@@ -108,7 +108,7 @@ export default function LandingPage() {
                 <Box sx={{ p: 2 }}>
                     {transcriptions.map((transcription) => (
                         <Link
-                            href={`/transcriptions/${transcription.id}`}
+                            href={`/meetings/${transcription.id}`}
                             key={transcription.id}
                             style={{ textDecoration: 'none', color: 'inherit' }}
                         >

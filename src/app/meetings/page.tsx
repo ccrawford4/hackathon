@@ -20,6 +20,8 @@ import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useEffect, useState } from "react";
 import { useDatabase } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
+import { Meeting } from "@/lib/API";
+import MeetingCard from "../components/MeetingCard";
 
 const darkTheme = createTheme({
   palette: {
@@ -31,18 +33,6 @@ const darkTheme = createTheme({
   },
 });
 
-interface Meeting {
-  id: string;
-  data: {
-    title: string;
-    tags: {
-      id: number;
-      name: string;
-      color?: string;
-    }[];
-    preview?: string;
-  };
-}
 
 export default function LandingPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -99,7 +89,7 @@ export default function LandingPage() {
           >
             <Toolbar>
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                Transcriptions
+                Meetings
               </Typography>
               <IconButton color="inherit" size="large">
                 <Search />
@@ -115,57 +105,7 @@ export default function LandingPage() {
 
           <Box sx={{ p: 2 }}>
             {meetings.map((meeting) => (
-              <Link
-                href={`/transcriptions/${meeting.id}`}
-                key={meeting.id}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    mb: 3,
-                    p: 2,
-                    backgroundColor: "background.paper",
-                    borderBottom: 1,
-                    borderColor: "divider",
-                    borderRadius: 0,
-                    cursor: "pointer",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    },
-                  }}
-                >
-                  <Typography variant="h5" gutterBottom>
-                    {meeting.data.title}
-                  </Typography>
-
-                  {/* Stack for horizontal tag layout with wrapping */}
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{
-                      flexWrap: "wrap",
-                      gap: 1, // Gap between wrapped rows
-                    }}
-                  >
-                    {/* {meeting.data.tags.map((tag) => (
-                      <Chip
-                        key={tag.id}
-                        label={tag.name}
-                        sx={{
-                          backgroundColor:
-                            tag.color || "rgba(255, 255, 255, 0.1)",
-                          borderRadius: "16px",
-                          color: "white",
-                          "& .MuiChip-label": {
-                            fontWeight: 500,
-                          },
-                        }}
-                      />
-                    ))} */}
-                  </Stack>
-                </Paper>
-              </Link>
+             <MeetingCard key={meeting.id} meeting={meeting} />
             ))}
           </Box>
         </Box>

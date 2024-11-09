@@ -1,22 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import React, { useEffect } from "react";
-import { useAuth } from "@/app/providers/AuthContext";
-import { useRouter } from "next/navigation";
+import React from "react";
+import { useAuth } from "@/app/providers/AppContext";
+import RequireAuthToolBar from "./components/RequireAuthToolBar";
 
 
 export default function Home() {
-  const router = useRouter();
-  const { user, logout } = useAuth();
-
-  useEffect(() => {
-    if (!user) {
-      router.push("/login");
-    }
-  }, [user, router]);
-
+  const { logout } = useAuth();
   return (
+    <RequireAuthToolBar>
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
       <button onClick={logout} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Log Out</button>
@@ -113,5 +106,6 @@ export default function Home() {
         </a>
       </footer>
     </div>
+    </RequireAuthToolBar>
   );
 }

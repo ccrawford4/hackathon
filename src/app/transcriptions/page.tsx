@@ -20,6 +20,7 @@ import {
     AccountCircle,
 } from '@mui/icons-material';
 import Link from 'next/link';
+import RequireAuthToolBar from '../components/RequireAuthToolBar';
 
 const darkTheme = createTheme(
     {
@@ -83,6 +84,7 @@ export default function LandingPage() {
         },
     ];
     return (
+        <RequireAuthToolBar>
         <ThemeProvider theme={darkTheme}>
             <CssBaseline />
             <Box sx={{ flexGrow: 1, minHeight: '100vh', pb: 10, position: 'relative' }}>
@@ -159,5 +161,6 @@ export default function LandingPage() {
                 </Box>
             </Box>
         </ThemeProvider>
+    </RequireAuthToolBar>
     );
 }

@@ -2,13 +2,15 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
-import { auth } from '@/lib/firebase';
+import { auth, database } from '@/lib/firebase';
+import { Database } from "firebase/database";
 
 interface AppContextType {
     loading: boolean;
     user: User | null;
     signInWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
+    database: Database
 }
 
 const AuthContext = createContext({} as AppContextType);
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
     
     return (
-        <AuthContext.Provider value={{ loading, user, signInWithGoogle, logout }}>
+        <AuthContext.Provider value={{ loading, user, signInWithGoogle, logout, database }}>
             {children}
         </AuthContext.Provider>
     );
@@ -48,4 +50,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 export function useAuth() {
     return useContext(AuthContext);
+}
+
+export function useDatabase() {
+    return useContext(AuthContext).database;
 }

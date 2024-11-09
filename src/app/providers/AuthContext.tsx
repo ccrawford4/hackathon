@@ -2,16 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
-import { auth, database } from '@/lib/firebase';
-//import { Database } from "firebase/database";
-import { Firestore } from "firebase/firestore";
+import { auth } from '@/lib/firebase';
 
 interface AppContextType {
     loading: boolean;
     user: User | null;
     signInWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
-    database: Firestore
 }
 
 const AuthContext = createContext({} as AppContextType);
@@ -43,7 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
     
     return (
-        <AuthContext.Provider value={{ loading, user, signInWithGoogle, logout, database }}>
+        <AuthContext.Provider value={{ loading, user, signInWithGoogle, logout }}>
             {children}
         </AuthContext.Provider>
     );
@@ -51,8 +48,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 export function useAuth() {
     return useContext(AuthContext);
-}
-
-export function useDatabase() {
-    return useContext(AuthContext).database;
 }

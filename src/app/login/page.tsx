@@ -37,7 +37,7 @@ export default function SignIn() {
 
   const validateTenant = async () => {
     const tenantsData = await listAll(db, "tenants");
-    return validTenant(tenant, tenantsData as [string, Tenant][]);
+    return validTenant(tenant, tenantsData);
   };
 
   // Function to handle tenant name validation

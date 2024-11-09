@@ -11,13 +11,16 @@ import {
   createTheme,
 } from "@mui/material";
 
-import { Search, Settings, AccountCircle } from "@mui/icons-material";
+import { Search, Settings, AccountCircle, Add } from "@mui/icons-material";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
-import { useDatabase } from "../providers/AppContext";
+import { useAuth, useDatabase, useTenantId } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
-import { Meeting } from "@/lib/API";
+import { Meeting, MeetingUser, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
+import NewMeeting from "../components/NewMeeting";
+import { createUUID } from "@/lib/helpers";
+import { createObject, createObjects } from "@/lib/mutations";
 
 const darkTheme = createTheme({
   palette: {
@@ -29,43 +32,104 @@ const darkTheme = createTheme({
   },
 });
 
-
 export default function LandingPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [users, setUsers] = useState<CustomUser[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addMeeting, setAddMeeting] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<CustomUser[]>([]);
+  const [meetingName, setMeetingName] = useState("");
   const database = useDatabase();
+  const { tenantId } = useAuth();
 
   const loadPage = useCallback(async () => {
     try {
       setLoading(true);
 
-      const result = await listAll(database, "meetings");
+      console.log("tenantId: ", tenantId);
+      // Load meetings
+      const result = await listAll(database, "meetings", tenantId);
       if (!result) {
         console.error("No data found");
         setLoading(false);
         return;
       }
 
-      const newMeetings: Meeting[] = [];
-      for (const entry of result) {
-        newMeetings.push({
-          id: entry.id,
-          data: entry.data as Meeting["data"],
-        });
+      console.log("Meetings result: ", result);
+
+      const newMeetings: Meeting[] = result.map((entry) => ({
+        id: entry.id,
+        data: entry.data as Meeting["data"],
+      }));
+      setMeetings(newMeetings);
+
+
+      console.log("tenantId: ", tenantId);
+      // Load the users
+      const usersResult = await listAll(database, "users", tenantId);
+      if (!usersResult) {
+        console.error("No data found");
+        setLoading(false);
+        return;
       }
 
-      setMeetings(newMeetings);
+      console.log("usersResult: ", usersResult);
+
+      setUsers(usersResult.map((entry) => ({
+        id: entry.id,
+        data: entry.data as CustomUser["data"],
+      })));
+
+      // Load tags
+      const tagsResult = await listAll(database, "tags", tenantId);
+      if (!tagsResult) {
+        console.error("No data found");
+        setLoading(false);
+        return;
+      }
+
+      console.log("tagsResult: ", tagsResult);
+
+      setAvailableTags(tagsResult.map((entry) => ({
+        id: entry.id,
+        data: entry.data as Tag["data"],
+      })));
+
       setLoading(false);
     } catch (error) {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-
   }, [database]);
+
 
   useEffect(() => {
     loadPage();
   }, [loadPage]);
+
+
+  const handleCreateMeeting = async () => {
+    const newMeeting: QueryInput = {
+      data: {
+        tenantId: tenantId as string,
+        title: meetingName,
+      },
+    }
+
+    const response = await createObject(database, "meetings", newMeeting);
+
+    const meetingUsers: QueryInput[] = selectedUsers.map((user) => ({
+      data: {
+        meetingId: response,
+        userId: user.id,
+      },
+    }));
+
+    await createObjects(database, "meetingUsers", meetingUsers);
+  }
+
 
   // TODO: Change to use a react spinner instead
   if (loading) {
@@ -88,6 +152,13 @@ export default function LandingPage() {
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                 Meetings
               </Typography>
+              <IconButton
+                onClick={() => setAddMeeting(!addMeeting)}
+                color="inherit"
+                size="large"
+              >
+                <Add />
+              </IconButton>
               <IconButton color="inherit" size="large">
                 <Search />
               </IconButton>
@@ -100,9 +171,23 @@ export default function LandingPage() {
             </Toolbar>
           </AppBar>
 
+          <NewMeeting 
+            addMeeting={addMeeting}
+            setAddMeeting={setAddMeeting}
+            users={users}
+            tags={tags}
+            setTags={setTags}
+            selectedUsers={selectedUsers}
+            setSelectedUsers={setSelectedUsers}
+            meetingName={meetingName}
+            setMeetingName={setMeetingName}
+            availableTags={availableTags}
+            handleCreateMeeting={handleCreateMeeting}
+          />
+
           <Box sx={{ p: 2 }}>
             {meetings.map((meeting) => (
-             <MeetingCard key={meeting.id} meeting={meeting} />
+              <MeetingCard key={meeting.id} meeting={meeting} />
             ))}
           </Box>
         </Box>

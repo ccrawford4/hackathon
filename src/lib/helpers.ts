@@ -56,7 +56,6 @@ export function createUUID(): string {
       const tags: TagWithDetails[] = tagSnapshots
         .filter((snapshot) => snapshot.exists())
         .map((snapshot) => ({
-          id: snapshot.key as string,
           ...(snapshot.val() as Tag),
         }));
 

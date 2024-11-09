@@ -14,12 +14,13 @@ import {
 import { Search, Settings, AccountCircle, Add } from "@mui/icons-material";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
-import { useAuth, useDatabase } from "../providers/AppContext";
+import { useAuth, useDatabase, useTenantId } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
 import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
+import { set } from "firebase/database";
 
 const darkTheme = createTheme({
   palette: {
@@ -108,6 +109,12 @@ export default function LandingPage() {
     loadPage();
   }, [loadPage]);
 
+  const reset = () => {
+    setMeetingName("");
+    setSelectedUsers([]);
+    setTags([]);
+  }
+
 
   const handleCreateMeeting = async () => {
     const newMeeting: QueryInput = {
@@ -119,14 +126,25 @@ export default function LandingPage() {
 
     const response = await createObject(database, "meetings", newMeeting);
 
+    const newMeetingObject: Meeting = {
+      id: response.id,
+      data: response.data as Meeting["data"],
+    }
+    setMeetings((prevMeetings) => prevMeetings.concat(newMeetingObject));
+    reset();
+
     const meetingUsers: QueryInput[] = selectedUsers.map((user) => ({
       data: {
-        meetingId: response,
+        meetingId: response.id,
         userId: user.id,
       },
     }));
 
-    await createObjects(database, "meetingUsers", meetingUsers);
+    const users = await createObjects(database, "meetingUsers", meetingUsers);
+    if (!users) { 
+      console.error("Error creating meeting users");
+    }
+    setAddMeeting(false);
   }
 
 

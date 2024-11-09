@@ -13,7 +13,7 @@ export default function RequireAuthToolBar(props: RequireAuthToolBarProps) {
   const tenantId = useTenantId();
 
   useEffect(() => {
-    if (!user || !tenantId) {
+    if (!user) {
       router.push('/login');
     }
   }, [tenantId, user, router]);

@@ -14,6 +14,7 @@ export async function createObject(db: Database, collection: string, object: Que
 export async function createObjects(db: Database, collection: string, objects: QueryInput[]) {
     const promises = objects.map((object) => {
         const id = createUUID();
+        console.log("object.data: ", object.data);
         const dbRef = ref(db, `${collection}/${id}`);
         return set(dbRef, object.data);  // Return each promise from set
     });

@@ -41,21 +41,6 @@ export async function listAll(
   }
 }
 
-// export async function listTenants(db: Database): Promise<QueryResult[]> {
-//   const databaseRef = ref(db, "tenants");
-//   const snapshot = await get(databaseRef);
-
-//   if (snapshot.exists()) {
-//     const data = snapshot.val();
-//     const entries = Object.entries(data);
-//     return entries.map((entry) => {
-//       return { id: entry[0], data: entry[1] };
-//     });
-//   } else {
-//     return [];
-//   }
-// }
-
 export async function getTenant(db: Database, name: string): Promise<{ id: string, data: unknown } | null> {
   const tenantRef = ref(db, "tenants");
   const tenantQuery = query(

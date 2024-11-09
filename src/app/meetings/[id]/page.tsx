@@ -99,6 +99,7 @@ export default function MeetingDetail() {
                             letterSpacing: '0.00938em',
                         }}
                     >
+                        {meeting?.data.summary}
                     </Typography>
                 </Container>
             </Box>

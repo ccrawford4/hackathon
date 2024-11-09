@@ -14,13 +14,10 @@ export interface Data {
 export interface Meeting {
     id: string;
     data: {
+      tenantId: string;
       title: string;
-      tags: {
-        id: number;
-        name: string;
-        color?: string;
-      }[];
-      preview?: string;
+      summary?: string;
+      tagLine?: string;
     };
   }
 

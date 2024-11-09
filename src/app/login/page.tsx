@@ -6,8 +6,6 @@ import { useAuth, useDatabase } from "@/app/providers/AppContext";
 import { listAll, validTenant } from "@/lib/queries";
 import { Tenant } from "@/lib/API";
 import setObject from "@/lib/mutations";
-import { useAuth, useDatabase } from '@/app/providers/AppContext';
-import { ref, get, set } from "firebase/database";
 import {
   Box,
   CssBaseline,
@@ -86,56 +84,6 @@ export default function SignIn() {
       setErrorMessage("Error registering tenant. Please try again.");
     }
   };
-
-  return (
-    <div>
-      {!tenantValidated ? (
-        <div>
-          <h2>Enter Tenant Name</h2>
-          <input
-            type="text"
-            value={tenant}
-            onChange={(e) => setTenant(e.target.value)}
-            placeholder="Tenant name"
-            className="border p-2 rounded mb-2"
-          />
-          <button
-            onClick={handleTenantSubmit}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Submit Tenant Name
-          </button>
-          <button
-            onClick={handleTenantRegister}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Register a new tenant
-          </button>
-          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-        </div>
-      ) : (
-        <div>
-          <button
-            onClick={() => handleSignInFlow()}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Sign in
-          </button>
-        </div>
-      )}
-    </div>
-      const dbRef = ref(db, `tenants/${tenant}`);
-      await set(dbRef, {
-        name: tenant,
-      });
-      setTenantValidated(true);
-      setErrorMessage("");
-    }
-    catch (error) {
-      console.error("Error registering tenant: ", error);
-      setErrorMessage("Error registering tenant. Please try again.");
-    }
-  }
 
   return (
     <ThemeProvider theme={darkTheme}>

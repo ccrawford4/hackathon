@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useDatabase } from '@/app/providers/AppContext';
-import { ref, get, set } from "firebase/database";
+import { useAuth, useDatabase } from "@/app/providers/AppContext";
+import { listAll, validTenant } from "@/lib/queries";
+import { Tenant } from "@/lib/API";
+import setObject from "@/lib/mutations";
 
 export default function SignIn() {
   const { user, signInWithGoogle } = useAuth();
@@ -11,31 +13,33 @@ export default function SignIn() {
   const db = useDatabase();
 
   // State to handle the tenant input and validation
-  const [tenant, setTenant] = useState("");
+  const [tenant, setTenant] = useState<string>("");
   const [tenantValidated, setTenantValidated] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (user) {
-        console.log("Already Logged In. Redirecting to home page...");
-        router.push("/");
+      console.log("Already Logged In. Redirecting to home page...");
+      router.push("/");
     }
   }, [user, router]);
 
+  const validateTenant = async () => {
+    const tenantsData = await listAll(db, "tenants");
+    return validTenant(tenant, tenantsData as [string, Tenant][]);
+  };
 
   // Function to handle tenant name validation
   const handleTenantSubmit = async () => {
     try {
-      const dbRef = ref(db, `tenants/${tenant}`);
-      const snapshot = await get(dbRef); // Get the snapshot directly from the dbRef
+      const validTenant = await validateTenant();
 
-      if (snapshot.exists()) {
-          console.log("Snapshot: ", snapshot);
-          setErrorMessage(""); // Clear any error message
-          setTenantValidated(true); // Tenant is validated
+      if (validTenant) {
+        setTenantValidated(true);
+        setErrorMessage("");
       } else {
-          setTenantValidated(false); // Tenant doesn't exist
-          setErrorMessage("Invalid tenant name. Please try again.");
+        setTenantValidated(false);
+        setErrorMessage("Tenant name not found. Please try again.");
       }
     } catch (error) {
       console.error("Error validating tenant name: ", error);
@@ -46,27 +50,29 @@ export default function SignIn() {
 
   const handleSignInFlow = () => {
     if (tenantValidated) {
-        signInWithGoogle();
+      signInWithGoogle();
     } else {
       setErrorMessage("Please validate the tenant name before signing in.");
     }
   };
 
-
   const handleTenantRegister = async () => {
     try {
-        const dbRef = ref(db, `tenants/${tenant}`);
-        await set(dbRef, {
-            name: tenant,
-        });
+      const currentTenant = await validateTenant();
+
+      if (currentTenant) {
+        setErrorMessage("Tenant name already exists. Please try again.");
+      } else {
+        await setObject(db, "tenants", { name: tenant });
         setTenantValidated(true);
         setErrorMessage("");
+      }
+
+    } catch (error) {
+      console.error("Error registering tenant: ", error);
+      setErrorMessage("Error registering tenant. Please try again.");
     }
-    catch (error) {
-        console.error("Error registering tenant: ", error);
-        setErrorMessage("Error registering tenant. Please try again.");
-    }
-  }
+  };
 
   return (
     <div>
@@ -86,10 +92,12 @@ export default function SignIn() {
           >
             Submit Tenant Name
           </button>
-          <button onClick={handleTenantRegister} 
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          <button
+            onClick={handleTenantRegister}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
             Register a new tenant
-        </button>
+          </button>
           {errorMessage && <p className="text-red-500">{errorMessage}</p>}
         </div>
       ) : (

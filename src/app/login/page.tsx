@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useDatabase } from "@/app/providers/AppContext";
 import { listAll, validTenant } from "@/lib/queries";
-import { Tenant } from "@/lib/API";
 import setObject from "@/lib/mutations";
 import {
   Box,
@@ -37,7 +36,7 @@ export default function SignIn() {
 
   const validateTenant = async () => {
     const tenantsData = await listAll(db, "tenants");
-    return validTenant(tenant, tenantsData as [string, Tenant][]);
+    return validTenant(tenant, tenantsData);
   };
 
   // Function to handle tenant name validation

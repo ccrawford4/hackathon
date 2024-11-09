@@ -1,9 +1,10 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-// import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
+// import { getDatabase } from "firebase/database";
+import { getFirestore } from "firebase/firestore";
 
+// import { getAnalytics } from "firebase/analytics";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -12,6 +13,7 @@ import { getDatabase } from "firebase/database";
 const firebaseConfig = {
   apiKey: "AIzaSyA6zmMM4qIRgOp-nzXo5HmEJ3oDp59qFV0",
   authDomain: "meetpro-37b81.firebaseapp.com",
+  databaseURL: "https://meetpro-37b81-default-rtdb.firebaseio.com",
   projectId: "meetpro-37b81",
   storageBucket: "meetpro-37b81.firebasestorage.app",
   messagingSenderId: "463517229286",
@@ -19,9 +21,10 @@ const firebaseConfig = {
   measurementId: "G-B7RTPLS2PY"
 };
 
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const database = getDatabase(app);
+export const database = getFirestore(app);
 
 // const analytics = getAnalytics(app);

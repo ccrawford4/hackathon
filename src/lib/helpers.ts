@@ -11,6 +11,7 @@ import {
   CustomUser,
   MeetingUser,
   TagWithDetails,
+  Message
 } from "./API";
 
 export function createUUID(): string {
@@ -130,6 +131,44 @@ export const getMeetingUsers = async (db: Database, meetingId: string) => {
 
   // Return the collection of user objects
   return users;
+};
+
+export const getMeetingMessages = async (db: Database, meetingId: string): Promise<Message[]> => {
+  // Reference to the 'messages' node in the database
+  const messagesRef = ref(db, 'messages');
+
+  console.log("Meeting id: ", meetingId);
+  
+  // Query messages where 'meetingId' equals the specified meetingId
+  const messagesQuery = query(messagesRef, orderByChild('meetingId'), equalTo(meetingId));
+
+  try {
+    // Get the snapshot of the query result
+    const messagesSnapshot = await get(messagesQuery);
+
+    console.log("messagesSnapshot: ", messagesSnapshot);
+
+    const data = messagesSnapshot.val();
+
+    if (!data) {
+      // If no messages are found, return an empty array
+      return [];
+    }
+
+    // Transform data into an array of messages
+    const messagesList = Object.entries(data).map(([id, messageData]) => ({
+      id,
+      data: messageData, // Assuming messageData contains the actual message fields like text, etc.
+    } as Message));
+
+    console.log("Messages: ", messagesList);
+
+    return messagesList;
+
+  } catch (error) {
+    console.error("Error fetching messages: ", error);
+    return []; // Return an empty array in case of an error
+  }
 };
 
 export const getMeetingObject = async (db: Database, userID: string) => {

@@ -1,29 +1,26 @@
 "use client";
-import React, { useState} from "react";
-import { IconButton, Avatar, Button } from "@mui/material";
+import React, { useState, useRef, useEffect } from "react";
+import { IconButton, Avatar, Button, TextareaAutosize } from "@mui/material";
 import { Close, Chat, Mic, PanTool } from "@mui/icons-material";
 import Link from "next/link";
-import { Member } from "@/lib/API";
+import { CustomUser, Member, Message } from "@/lib/API";
 import { useRouter } from "next/navigation";
 import { FcEndCall } from "react-icons/fc";
-import { updateObject } from "@/lib/mutations";
-import { Database } from "firebase/database";
+import { createObject, updateObject } from "@/lib/mutations";
+import { Database, ref, onValue, set, query, orderByChild, equalTo } from "firebase/database";
+import { useTenantId, useUserId } from "../providers/AppContext";
 
 interface MeetingChatProps {
   title: string;
-  messages: {
-    id: string;
-    member: Member;
-    text: string;
-  }[];
-  participants: Member[];
+  messages: Message[]
+  participants: CustomUser[];
   meetingId: string;
   db: Database;
 }
 
 const MeetingChat: React.FC<MeetingChatProps> = ({
   title,
-  messages,
+  //messages,
   participants,
   meetingId,
   db,
@@ -32,7 +29,13 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
   // const [socket, setSocket] = useState<WebSocket | null>(null);
   // const userId = useUserId();
 
-  const [transcripts,] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef(null);
+  const tenantId = useTenantId();
+  const userId = useUserId();
+  //const [transcripts] = useState<string[]>([]);
 
   // useEffect(() => {
   //     const ws = new WebSocket(`ws://localhost:8000/ws/meeting/${meetingId}/`);
@@ -113,102 +116,178 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
   //         // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [socket]);
 
-
   const handleEndMeeting = async () => {
     console.log("End Meeting");
     const updateMeeting = await updateObject(db, "meetings", meetingId, {
-        endAt: new Date().toISOString(),
+      endAt: new Date().toISOString(),
     });
 
     console.log("Updated Meeting: ", updateMeeting);
     router.push(`/meetings/${meetingId}`);
-  }
+  };
+
+  // Scroll to bottom whenever messages update
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    // Reference to all messages in the database
+    const messagesRef = ref(db, 'messages');
+
+    // Query the messages where 'meetingId' matches the specified meetingId
+    const messagesQuery = query(messagesRef, orderByChild('meetingId'), equalTo(meetingId));
+
+    // Subscribe to real-time updates
+    const unsubscribe = onValue(messagesQuery, (snapshot) => {
+      const messagesData = snapshot.val();
+      if (messagesData) {
+        // Convert the messages data to an array of objects with id and data
+        const messagesList = Object.entries(messagesData).map(([id, data]) => ({
+          id,
+          data,
+        }));
+
+        // Append new messages to the existing list (avoiding full reset)
+        setMessages((prevMessages) => {
+          const messageIds = prevMessages.map((msg) => msg.id);
+          const newMessages = (messagesList as Message[]).filter((msg) => !messageIds.includes(msg.id));
+          return [...prevMessages, ...newMessages];
+        });
+      } else {
+        // If no messages for this meetingId, clear the list
+        setMessages([]);
+      }
+    });
+
+    // Cleanup function to unsubscribe when the component unmounts or when meetingId changes
+    return () => {
+      unsubscribe();
+    };
+  }, [meetingId]); // Dependency array ensures effect runs when meetingId changes
+
+
+  // Send message handler
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+    const response = await createObject(db, "messages", {
+      data: {
+        content: newMessage,
+        createdAt: new Date().toISOString(),
+        senderId: userId,
+        meetingId: meetingId,
+        tenantId: tenantId,
+      }
+    })
+    console.log("Response: ", response);
+
+    setNewMessage("");
+  };
+
+  const getMessageSender = (senderId: string) => {
+    return (
+      participants.find((p) => p.id === senderId) || {
+        name: "Unknown User",
+        profileURL: "",
+      }
+    );
+  };
 
   return (
-    <div className="text-white">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-8">
+    <div className="flex flex-col h-screen text-white">
+      {/* Header */}
+      <div className="p-6 border-b border-white/10">
+        <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{title}</h1>
           <div className="flex items-center space-x-2">
             <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
               Live
             </span>
             <Link href={`/meetings/${meetingId}`}>
-              <IconButton color="inherit">
-                <Close />
+              <IconButton>
+                <Close className="h-5 w-5" />
               </IconButton>
             </Link>
+            <Button
+              onClick={handleEndMeeting}
+              className="bg-red-500 hover:bg-red-600 text-white px-1 rounded-full font-semibold"
+            >
+              End Meeting
+            </Button>
           </div>
         </div>
+      </div>
+      {/* Messages Area */}
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-6 space-y-4"
+      >
+        {messages.map((message) => {
+          const messageObject = message as Message;
+          const sender = getMessageSender(messageObject.data.senderId) as CustomUser;
+          const isCurrentUser = messageObject.data.senderId === userId;
 
-        <div className="relative">
-          <Avatar
-            src={participants[0]?.avatar}
-            className="w-24 h-24 mx-auto mb-8"
-          />
-        </div>
-
-        <div className="space-y-4 mb-8">
-          {messages.map((message) => (
-            <div key={message.id} className="flex items-center space-x-3">
-              <Avatar src={message.member.avatar} />
-              <div>
-                <p className="text-sm text-gray-200">{message.member.name}</p>
-                <p>{message.text}</p>
+          return (
+            <div
+              key={messageObject.id}
+              className={`flex items-start space-x-3 ${
+                isCurrentUser ? "flex-row-reverse space-x-reverse" : ""
+              }`}
+            >
+              <Avatar src={sender.data ? sender.data.profileURL : ""} className="w-8 h-8" />
+              <div
+                className={`max-w-[70%] ${isCurrentUser ? "text-right" : ""}`}
+              >
+                <p className="text-sm text-gray-300 mb-1">{sender.data ? (sender.data.firstName + " " + sender.data.lastName) : "Unkown User"}</p>
+                <div
+                  className={`rounded-lg p-3 ${
+                    isCurrentUser ? "bg-blue-600" : "bg-gray-700"
+                  }`}
+                >
+                  <p className="text-sm">{messageObject.data.content}</p>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
       </div>
-
-      <div className="fixed bottom-0 left-0 right-0 p-6">
-        <div className="flex justify-center space-x-8 mb-4">
-          <IconButton id="recordButton" className="bg-white bg-opacity-20">
-            <Chat />
-          </IconButton>
-          <IconButton id="stopButton" className="bg-white" disabled>
-            <Mic />
-          </IconButton>
-          <IconButton className="bg-white bg-opacity-20">
-            <PanTool />
-          </IconButton>
-        </div>
-
+      {/* Message Input */}
+      <div className="p-6 border-t border-white/10 bg-gray-800">
+        <form
+          onSubmit={() => handleSendMessage}
+          className="flex space-x-4 items-center"
+        >
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 px-4 py-2 text-white bg-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <Button
+            onClick={handleSendMessage}
+            disabled={!newMessage.trim()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+          >
+            Send
+          </Button>
+        </form>
+      </div>
+      {/* Participants */}
+      <div className="fixed bottom-24 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
         <div className="flex overflow-x-auto space-x-4 pb-4">
           {participants.map((participant) => (
             <div
               key={participant.id}
               className="flex flex-col items-center space-y-1"
             >
-              <Avatar src={participant.avatar} />
-              <p className="text-sm whitespace-nowrap">{participant.name}</p>
+              <Avatar src={participant.data.lastName} className="w-10 h-10" />
+              <p className="text-sm whitespace-nowrap">{participant.data.firstName}</p>
             </div>
           ))}
         </div>
-
-        {/* End Meeting Button */}
-        <div className="flex justify-center mt-8">
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleEndMeeting}
-            startIcon={<FcEndCall />}
-            style={{
-              backgroundColor: "#FF4B5C",
-              color: "white",
-              padding: "12px 24px",
-              fontSize: "16px",
-              fontWeight: "bold",
-              borderRadius: "9999px",
-              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.3)",
-            }}
-          >
-            End Meeting
-          </Button>
-        </div>
       </div>
-
-      <pre>{JSON.stringify(transcripts, null, 2)}</pre>
     </div>
   );
 };

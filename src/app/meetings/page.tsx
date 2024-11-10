@@ -151,6 +151,7 @@ export default function LandingPage() {
     };
 
     const response = await createObject(database, "meetings", newMeeting);
+    console.log("New Meeting: ", response);
 
     const newMeetingObject: Meeting = {
       id: response.id,

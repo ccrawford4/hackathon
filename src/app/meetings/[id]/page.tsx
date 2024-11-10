@@ -15,7 +15,7 @@ export default function MeetingDetail() {
   const db = useDatabase();
   const id = params.id;
   const [meeting, setMeeting] = useState<Meeting | null>(null);
-  const [tags, setTags] = useState<TagWithDetails[]>([]);
+  const [, setTags] = useState<TagWithDetails[]>([]);
   const [users, setUsers] = useState<CustomUser[]>([]);
   const tenantId = useTenantId();
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function MeetingDetail() {
     setMeeting(meeting as Meeting);
     setTags(tags as TagWithDetails[]);
     setUsers(users as CustomUser[]);
-  }, [db, id]);
+  }, [tenantId, db, id]);
 
   useEffect(() => {
     loadMeetingDetails();

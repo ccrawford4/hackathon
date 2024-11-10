@@ -4,11 +4,9 @@ import { Avatar, AvatarGroup, Button, IconButton } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { CustomUser, Meeting, TagWithDetails } from "@/lib/API";
-import { getItem, listAll } from "@/lib/queries";
+import { getItem } from "@/lib/queries";
 import {
   useDatabase,
-  useTenantId,
-  useUserId,
 } from "@/app/providers/AppContext";
 import { getMeetingTags, getMeetingUsers } from "@/lib/helpers";
 import Link from "next/link";
@@ -21,7 +19,6 @@ export default function MeetingDetail() {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [, setTags] = useState<TagWithDetails[]>([]);
   const [users, setUsers] = useState<CustomUser[]>([]);
-  const tenantId = useTenantId();
   const router = useRouter();
 
   const onStart = () => {
@@ -35,7 +32,7 @@ export default function MeetingDetail() {
     setMeeting(meeting as Meeting);
     setTags(tags as TagWithDetails[]);
     setUsers(users as CustomUser[]);
-  }, [tenantId, db, id]);
+  }, [db, id]);
 
   useEffect(() => {
     loadMeetingDetails();

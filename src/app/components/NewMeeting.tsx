@@ -56,7 +56,7 @@ export default function NewMeeting(props: NewMeetingProps) {
           <Autocomplete
             multiple
             options={users}
-            getOptionLabel={(option) => option.data.email}
+            getOptionLabel={(option) => option.data.email as string}
             value={selectedUsers}
             onChange={(e, newValue) => setSelectedUsers(newValue)}
             renderInput={(params) => (

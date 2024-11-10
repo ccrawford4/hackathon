@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarGroup, Button, IconButton } from "@mui/material";
+import { Avatar, AvatarGroup, Button, Chip, IconButton } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { CustomUser, Meeting, TagWithDetails } from "@/lib/API";
@@ -70,23 +70,28 @@ export default function MeetingDetail() {
         </div>
       </div>
 
-      {isMeetingOver ? (
+      {meeting?.data.endAt ? (
         // Meeting Summary View
         <div className="space-y-8">
           <div>
             <h2 className="text-3xl font-bold">{meeting?.data.title}</h2>
-            <p className="text-gray-400">
-              Meeting Date:{" "}
-             {/* new Date(meeting.data.startAt).toLocaleDateString() */}
-             Placeholder
+            {meeting?.data.startAt && (
+              <>
+              <p className="text-gray-400">
+                Meeting Date:{" "}
+                {new Date(meeting.data.startAt).toLocaleDateString()}
+              </p>
+               <p className="text-gray-400">
+               Started: {" "}
+               {new Date(meeting.data.startAt).toLocaleTimeString()}
+             </p>
+             </>
+            )}
+             <p className="text-gray-400">
+              End Date: {new Date(meeting?.data.endAt).toDateString()}
             </p>
             <p className="text-gray-400">
-              Started: { /* new Date(meeting.data.startAt).toLocaleTimeString() */}
-              pladeholder
-            </p>
-            <p className="text-gray-400">
-              Ended: { /* new Date(meeting.data.endAt).toLocaleTimeString() */}
-              placeholder
+              Ended: {new Date(meeting?.data.endAt).toLocaleTimeString()}
             </p>
           </div>
 
@@ -102,9 +107,7 @@ export default function MeetingDetail() {
               {meeting?.data.keyPoints?.map((point, index) => (
                 <li key={index}>{point}</li>
               ))}*/}
-              Key point 1
-              Key point 2
-              Key point 3
+              This was the most important meeting that ever happened in the history of meetings.
             </ul>
           </div>
 
@@ -112,7 +115,11 @@ export default function MeetingDetail() {
             <p className="text-gray-400 mb-2">Transcript</p>
             <div className="bg-gray-900 p-4 rounded-lg max-h-64 overflow-y-auto">
               <p className="text-sm whitespace-pre-wrap">
-                {meeting?.data.transcript}
+                {meeting?.data.transcript && meeting.data.transcript.length > 0 ? (
+                  meeting.data.transcript
+                ): (
+                  "No transcript available"
+                )}
               </p>
             </div>
           </div>
@@ -120,13 +127,19 @@ export default function MeetingDetail() {
           <div>
             <p className="text-gray-400 mb-2">Tags</p>
             <div className="flex flex-wrap gap-2">
-              {tags?.map((tag, index) => (
-                <span
+              {tags.map((tag, index) => (
+                <Chip
                   key={index}
-                  className={`bg-${tag.color} px-2 py-1 rounded-full text-sm`}
-                >
-                  {tag.name}
-                </span>
+                  label={tag.name}
+                  sx={{
+                    backgroundColor: tag.color || "rgba(255, 255, 255, 0.1)",
+                    borderRadius: "16px",
+                    color: "white",
+                    "& .MuiChip-label": {
+                      fontWeight: 500,
+                    },
+                  }}
+                />
               ))}
             </div>
           </div>

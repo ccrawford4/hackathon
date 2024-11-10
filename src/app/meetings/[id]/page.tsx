@@ -104,14 +104,10 @@ export default function MeetingDetail() {
           </div>
 
           <div>
-            <p className="text-gray-400 mb-2">Key Talking Points</p>
-            <ul className="list-disc list-inside space-y-1">
-              {/*
-              {meeting?.data.keyPoints?.map((point, index) => (
-                <li key={index}>{point}</li>
-              ))}*/}
-              This was the most important meeting that ever happened in the history of meetings.
-            </ul>
+            <p className="text-gray-400 mb-2">Tagline:</p>
+            <p className="list-disc list-inside space-y-1">
+             {meeting?.data.tagLine ? meeting.data.tagLine : "No tagline available"}
+            </p>
           </div>
 
           <div>

@@ -41,6 +41,7 @@ export default function LandingPage() {
   const [addMeeting, setAddMeeting] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<CustomUser[]>([]);
   const [meetingName, setMeetingName] = useState("");
+  const [numMeetings, setNumMeetings] = useState(0);
   const database = useDatabase();
   const { tenantId } = useAuth();
 
@@ -59,6 +60,7 @@ export default function LandingPage() {
         id: entry.id,
         data: entry.data as Meeting["data"],
       })));
+      setNumMeetings(result.length);
 
       const usersResult = await listAll(database, "users", tenantId);
       if (!usersResult) {
@@ -140,9 +142,12 @@ export default function LandingPage() {
       },
     }));
     const meetingTagsResponse = await createObjects(database, "meetingTags", meetingTags);
+    console.log("Meeting tags response: ", meetingTagsResponse);
     if (!meetingTagsResponse) {
       console.error("Error creating meeting tags");
     }
+
+    setNumMeetings(numMeetings + 1);
     setAddMeeting(false);
   }
 
@@ -203,7 +208,7 @@ export default function LandingPage() {
 
           <Box sx={{ p: 2 }}>
             {meetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} />
+              <MeetingCard key={meeting.id} meeting={meeting} numMeetings={numMeetings}/>
             ))}
           </Box>
         </Box>

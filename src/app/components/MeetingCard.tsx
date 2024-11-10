@@ -9,6 +9,7 @@ import { useDatabase } from "../providers/AppContext";
 
 interface MeetingCardProps {
   meeting: Meeting;
+  numMeetings: number;
 }
 
 export default function MeetingCard(props: MeetingCardProps) {
@@ -29,7 +30,7 @@ export default function MeetingCard(props: MeetingCardProps) {
 
   useEffect(() => {
     loadTags();
-  }, [loadTags]); // Add loadTags as a dependency to useEffect
+  }, [loadTags, props.numMeetings]); // Add loadTags as a dependency to useEffect
 
   return (
     <Link

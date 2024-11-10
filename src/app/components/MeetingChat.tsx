@@ -4,7 +4,6 @@ import { IconButton, Avatar } from '@mui/material';
 import { Close, Chat, Mic, PanTool } from '@mui/icons-material';
 import Link from 'next/link';
 import { Member } from '@/lib/API';
-import { useRouter } from 'next/navigation';
 import { useUserId } from '../providers/AppContext';
 
 interface MeetingChatProps {
@@ -24,7 +23,6 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
     participants,
     meetingId,
 }) => {
-    const router = useRouter();
 
     const [socket, setSocket] = useState<WebSocket | null>(null);
     const userId = useUserId();
@@ -32,7 +30,7 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
     const [transcripts, setTranscripts] = useState<string[]>([]);
 
     useEffect(() => {
-        const ws = new WebSocket(`ws://localhost:8000/ws/meeting/${meetingId}/`);
+        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_CHAT_WEB_SOCKET_URL}/ws/meeting/${meetingId}`);
         setSocket(ws);
 
         ws.onopen = () => {
@@ -47,7 +45,6 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
 
         ws.onerror = (error) => {
             console.log('WebSocket error:', error);
-            router.push('/');
         };
 
         ws.onmessage = async (event) => {

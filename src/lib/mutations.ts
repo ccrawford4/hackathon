@@ -25,6 +25,7 @@ export async function createObjects(db: Database, collection: string, objects: Q
 }
 
 export function deleteObject(db: Database, collection: string, id: string) {
+    console.log("id: ", id);
     const itemRef = ref(db, `${collection}/${id}`);
     remove(itemRef).then(() => {
         console.log("Item removed successfully!");

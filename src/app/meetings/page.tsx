@@ -55,6 +55,7 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
+      console.log("RESULT: ", result);
       setMeetings(result.map((entry) => ({
         id: entry.id,
         data: entry.data as Meeting["data"],

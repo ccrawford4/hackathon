@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -9,20 +10,22 @@ import {
   Typography,
   ThemeProvider,
   createTheme,
-  Autocomplete,
   TextField,
+  InputAdornment,
 } from "@mui/material";
 
-import { Search, Settings, AccountCircle, Add, Close } from "@mui/icons-material";
+import { Search, Settings, AccountCircle, Add, Clear } from "@mui/icons-material";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
-import { useAuth, useDatabase } from "../providers/AppContext";
+import { useAuth, useDatabase, useUserId } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
+import { getMeetingObject } from "@/lib/helpers";
 import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
 import CircleLoader from "react-spinners/CircleLoader";
+
 
 const darkTheme = createTheme({
   palette: {
@@ -46,10 +49,27 @@ export default function LandingPage() {
   const [numMeetings, setNumMeetings] = useState(0);
   const database = useDatabase();
   const { tenantId } = useAuth();
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const [filteredMeetings, setFilteredMeetings] = useState<Meeting[]>([]);
-  const [searchText, setSearchText] = useState('');
-  const [autocompleteKey, setAutocompleteKey] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredItems, setFilteredItems] = useState<Meeting[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const userID = useUserId()?.toString();
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      setIsSearching(true);
+      if (!userID) return
+      const meetingids = await getMeetingObject(database, userID?.toString());
+      const results = meetings.filter(meetings =>
+        (meetings.data.title.toLowerCase().includes(searchTerm.toLowerCase()) ||  
+        tags.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+        && meetingids.includes(meetings.id)
+      );
+      setFilteredItems(results);
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, meetings, tags, userID]);
 
   const loadPage = useCallback(async () => {
     try {
@@ -62,14 +82,11 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
+      console.log("RESULT: ", result);
       setMeetings(result.map((entry) => ({
         id: entry.id,
         data: entry.data as Meeting["data"],
       })));
-      setMeetings(meetings);
-      setFilteredMeetings(meetings);
-
-      // Load the users
       setNumMeetings(result.length);
 
       const usersResult = await listAll(database, "users", tenantId);
@@ -78,7 +95,6 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
-
       setUsers(usersResult.map((entry) => ({
         id: entry.id,
         data: entry.data as CustomUser["data"],
@@ -101,7 +117,8 @@ export default function LandingPage() {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-  }, [meetings, tenantId, database]);
+  }, [tenantId, database]);
+
 
   useEffect(() => {
     loadPage();
@@ -113,19 +130,6 @@ export default function LandingPage() {
     setTags([]);
   }
 
-  const handleSearchTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value.toLowerCase();
-    setSearchText(value);
-
-    if (value === '') {
-      setFilteredMeetings(meetings);
-    } else {
-      const filtered = meetings.filter(meeting =>
-        meeting.data.title?.toLowerCase().includes(value)
-      );
-      setFilteredMeetings(filtered);
-    }
-  };
 
   const handleCreateMeeting = async () => {
     const newMeeting: QueryInput = {
@@ -142,7 +146,6 @@ export default function LandingPage() {
       data: response.data as Meeting["data"],
     }
     setMeetings((prevMeetings) => prevMeetings.concat(newMeetingObject));
-    setFilteredMeetings((prevMeetings) => prevMeetings.concat(newMeetingObject));
     reset();
 
     const meetingUsers: QueryInput[] = selectedUsers.map((user) => ({
@@ -175,6 +178,7 @@ export default function LandingPage() {
     setAddMeeting(false);
   }
 
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -185,7 +189,7 @@ export default function LandingPage() {
 
   return (
     <RequireAuthToolBar>
-     <ThemeProvider theme={darkTheme}>
+      <ThemeProvider theme={darkTheme}>
         <CssBaseline />
         <Box
           sx={{ flexGrow: 1, minHeight: "100vh", pb: 10, position: "relative" }}
@@ -196,87 +200,53 @@ export default function LandingPage() {
             sx={{ backgroundColor: "background.paper" }}
           >
             <Toolbar>
-              {isSearchVisible ? (
-                <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-                  <Autocomplete
-                    key={autocompleteKey}
-                    sx={{ flexGrow: 1 }}
-                    options={meetings}
-                    getOptionLabel={(option: Meeting | string) =>
-                      typeof option === 'string' ? option : option.data.title || ""
-                    }
-                    inputValue={searchText}
-                    onInputChange={(event, newInputValue) => {
-                      setSearchText(newInputValue);
-                    }}
-                    onChange={(event, value: Meeting | string | null) => {
-                      if (value && typeof value !== 'string') {
-                        setFilteredMeetings([value]);
-                        setSearchText(value.data.title || "");
-                      }
-                    }}
-                    freeSolo
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        variant="standard"
-                        placeholder="Search meetings..."
-                        autoFocus
-                        onChange={handleSearchTextChange}
-                        sx={{
-                          '& .MuiInput-root': {
-                            color: 'inherit',
-                          },
-                          '& .MuiInput-underline:before': {
-                            borderBottomColor: 'rgba(255, 255, 255, 0.7)',
-                          },
-                          '& .MuiInput-underline:hover:before': {
-                            borderBottomColor: 'rgba(255, 255, 255, 0.9)',
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                  <IconButton
-                    color="inherit"
-                    onClick={() => {
-                      setIsSearchVisible(false);
-                      setSearchText('');
-                      setFilteredMeetings(meetings);
-                      setAutocompleteKey(prev => prev + 1);
-                    }}
-                    sx={{ ml: 1 }}
-                  >
-                    <Close />
-                  </IconButton>
-                </Box>
-              ) : (
-                <>
-                  <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                    OneFlow
-                  </Typography>
-                  <IconButton
-                    onClick={() => setAddMeeting(!addMeeting)}
-                    color="inherit"
-                    size="large"
-                  >
-                    <Add />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => setIsSearchVisible(true)}
-                    color="inherit"
-                    size="large"
-                  >
-                    <Search />
-                  </IconButton>
-                  <IconButton color="inherit" size="large">
-                    <Settings />
-                  </IconButton>
-                  <IconButton color="inherit" size="large">
-                    <AccountCircle />
-                  </IconButton>
-                </>
-              )}
+              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                Meetings
+              </Typography>
+              <IconButton
+                onClick={() => setAddMeeting(!addMeeting)}
+                color="inherit"
+                size="large"
+              >
+                <Add />
+              </IconButton>
+              <TextField
+                size="small"
+                sx={{
+                  width: '300px',
+                  marginTop: 2,
+                  marginBottom: 2
+                }}
+                variant="outlined"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search items..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchTerm && (  // Only show clear button if there's text
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setSearchTerm('')}
+                        edge="end"
+                        aria-label="clear search"
+                      >
+                        <Clear fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+              <IconButton color="inherit" size="large">
+                <Settings />
+              </IconButton>
+              <IconButton color="inherit" size="large">
+                <AccountCircle />
+              </IconButton>
             </Toolbar>
           </AppBar>
 
@@ -293,12 +263,20 @@ export default function LandingPage() {
             availableTags={availableTags}
             handleCreateMeeting={handleCreateMeeting}
           />
+          {isSearching ? (
+            <p></p>
+          ) : (
+            <Box sx={{ p: 2 }}>
+              {filteredItems.map((meeting) => (
+                <MeetingCard
+                  key={meeting.id}
+                  meeting={meeting}
+                  numMeetings={numMeetings}
 
-          <Box sx={{ p: 2 }}>
-            {filteredMeetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} numMeetings={numMeetings}/>
-            ))}
-          </Box>
+                />
+              ))}
+            </Box>
+          )}
         </Box>
       </ThemeProvider>
     </RequireAuthToolBar>

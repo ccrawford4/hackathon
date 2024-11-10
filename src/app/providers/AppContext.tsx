@@ -7,7 +7,6 @@ import { Database } from "firebase/database";
 import { User } from "firebase/auth";
 import { getUser } from "@/lib/queries";
 import { createObject } from "@/lib/mutations";
-import { CustomUser } from "@/lib/API";
 
 interface AppContextType {
     loading: boolean;
@@ -74,18 +73,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-            console.log("Firebase User: ", firebaseUser);
             if (!firebaseUser) {
                 setUser(null);
                 setLoading(false);
                 return;
             }
             setUser(firebaseUser);
-            setLoading(false);
 
-            getUser(database, firebaseUser.email).then((userObject) => {
-                
-            })
+            setLoading(false);
         });
     
         return () => unsubscribe();
@@ -107,7 +102,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             console.log("Name: ", firstName, lastName);
             console.log("Email: ", email);
 
-            let userObject = await getUser(database, email);
+            console.log("User: ", user);
+            console.log("Name: ", firstName, lastName);
+            console.log("Email: ", email);
+
+            const userObject = await getUser(database, email);
             if (!userObject) {
                 await createObject(database, "users", {
                     data: {
@@ -122,6 +121,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 });
                 
             } else {
+                console.log("userObject: ", userObject);
                 console.log("userObject: ", userObject);
                 setUserId(userObject.id);
             }

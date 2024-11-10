@@ -24,7 +24,6 @@ import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
-import CircleLoader from "react-spinners/CircleLoader";
 
 
 const darkTheme = createTheme({
@@ -157,7 +156,7 @@ export default function LandingPage() {
     }));
 
     const users = await createObjects(database, "meetingUsers", meetingUsers);
-    if (!users) {
+    if (!users) { 
       console.error("Error creating meeting users");
     }
 
@@ -180,11 +179,7 @@ export default function LandingPage() {
 
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <CircleLoader color="#ff00ed" size={500} />
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
@@ -250,7 +245,7 @@ export default function LandingPage() {
             </Toolbar>
           </AppBar>
 
-          <NewMeeting
+          <NewMeeting 
             addMeeting={addMeeting}
             setAddMeeting={setAddMeeting}
             users={users}
@@ -272,7 +267,6 @@ export default function LandingPage() {
                   key={meeting.id}
                   meeting={meeting}
                   numMeetings={numMeetings}
-
                 />
               ))}
             </Box>

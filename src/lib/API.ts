@@ -2,7 +2,7 @@ export interface Tenant {
   id: string;
   data: {
     name: string;
-  }
+  };
 }
 
 export interface QueryResult {
@@ -25,9 +25,12 @@ export interface Meeting {
 }
 
 export interface MeetingTag {
-  meetingId: string;
-  tenantId: string;
-  tagId: string;
+  id: string;
+  data: {
+    meetingId: string;
+    tenantId: string;
+    tagId: string;
+  };
 }
 
 export interface Tag {
@@ -35,11 +38,12 @@ export interface Tag {
   data: {
     color: string;
     name: string;
-  }
+  };
 }
 
-export interface TagWithDetails extends Tag {
-  id: string;
+export interface TagWithDetails {
+  name: string;
+  color: string;
 }
 
 export interface CustomUser {
@@ -58,7 +62,7 @@ export interface MeetingUser {
   data: {
     meetingId: string;
     userId: string;
-  }
+  };
 }
 
 export interface Member {

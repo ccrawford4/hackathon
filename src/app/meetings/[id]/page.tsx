@@ -28,7 +28,6 @@ export default function MeetingDetail() {
     const tags = await getMeetingTags(db, meeting.id);
     const users = await getMeetingUsers(db, meeting.id);
 
-    console.log("Users: ", users);
     setMeeting(meeting as Meeting);
     setTags(tags as TagWithDetails[]);
     setUsers(users as CustomUser[]);

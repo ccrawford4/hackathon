@@ -98,16 +98,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const firstName = nameParts[0] || "";
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
-            console.log("User: ", user);
-            console.log("Name: ", firstName, lastName);
-            console.log("Email: ", email);
-
-            console.log("User: ", user);
-            console.log("Name: ", firstName, lastName);
-            console.log("Email: ", email);
-
             const userObject = await getUser(database, email);
-            if (!userObject) {
+
+            if (!userObject || userObject.id === '') {
                 await createObject(database, "users", {
                     data: {
                         tenantId: tenantId,
@@ -133,7 +126,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     const logout = async () => {
         await signOut(auth);
-        // Optionally clear tenantId on logout
         setTenantId(null);
     };
     

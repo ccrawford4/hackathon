@@ -16,11 +16,10 @@ import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useDatabase } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
-import { Meeting, QueryInput, Tag, CustomUser, MeetingTag, MeetingDetailsProps } from "@/lib/API";
+import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
-import { getMeetingTags } from "@/lib/helpers";
 
 const darkTheme = createTheme({
   palette: {
@@ -90,7 +89,7 @@ export default function LandingPage() {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-  }, [tenantId, database]);
+  }, [availableTags, tenantId, database]);
 
 
   useEffect(() => {

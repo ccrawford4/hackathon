@@ -9,9 +9,7 @@ import {
 } from "firebase/database";
 import {
   CustomUser,
-  MeetingTag,
   MeetingUser,
-  Tag,
   TagWithDetails,
 } from "./API";
 

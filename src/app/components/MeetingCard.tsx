@@ -1,6 +1,6 @@
 "use client";
 
-import { Meeting, Tag, TagWithDetails } from "@/lib/API";
+import { Meeting, TagWithDetails } from "@/lib/API";
 import { getMeetingTags } from "@/lib/helpers";
 import { Paper, Typography, Stack, Chip } from "@mui/material";
 import Link from "next/link";

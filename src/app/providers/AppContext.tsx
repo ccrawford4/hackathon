@@ -64,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
-            const { displayName, email } = user;
+            const { displayName, email, photoURL } = user;
             
             const nameParts = displayName ? displayName.split(" ") : [];
             const firstName = nameParts[0] || "";
@@ -78,6 +78,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         firstName: firstName,
                         lastName: lastName,
                         email: email,
+                        profileURL: photoURL || "",
                     }
                 });
             }
@@ -90,7 +91,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const logout = async () => {
         await signOut(auth);
         // Optionally clear tenantId on logout
-        // setTenantId(null);
+        setTenantId(null);
     };
     
     return (

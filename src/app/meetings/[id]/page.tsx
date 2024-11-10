@@ -69,7 +69,7 @@ export default function MeetingDetail() {
               {users.map((user) => (
                 <Avatar
                   key={user.id}
-                  // src={member.avatar} TODO: add a avatar
+                  src={user.data.profileURL} 
                   alt={user.data.firstName + " " + user.data.lastName}
                   className={"ring-2 ring-[#7000FF]"}
                 />

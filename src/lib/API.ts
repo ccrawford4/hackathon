@@ -49,6 +49,7 @@ export interface CustomUser {
     firstName: string;
     lastName: string;
     email: string;
+    profileURL: string;
   };
 }
 

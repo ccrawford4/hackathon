@@ -10,6 +10,7 @@ import {
 import {
   CustomUser,
   MeetingUser,
+  Tag,
   TagWithDetails,
 } from "./API";
 
@@ -28,7 +29,7 @@ export function createUUID(): string {
 export const getMeetingTags = async (
   db: Database,
   meetingId: string
-): Promise<TagWithDetails[]> => {
+): Promise<Tag[]> => {
   try {
     // 1. Query meetingTags to get all entries for this meetingId
     const meetingTagsRef = ref(db, "meetingTags");
@@ -64,10 +65,10 @@ export const getMeetingTags = async (
     const tagSnapshots = await Promise.all(tagPromises);
 
     // 4. Combine the data
-    const tags: TagWithDetails[] = tagSnapshots
+    const tags: Tag[] = tagSnapshots
       .filter((snapshot) => snapshot.exists())
       .map((snapshot) => ({
-        ...(snapshot.val() as TagWithDetails),
+        ...(snapshot.val() as Tag),
       }));
 
     return tags;

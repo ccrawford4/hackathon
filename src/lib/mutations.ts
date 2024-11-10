@@ -1,6 +1,6 @@
 import { set, ref } from "firebase/database";
 import { createUUID } from "./helpers";
-import { Database, remove } from "firebase/database";
+import { Database, remove, update } from "firebase/database";
 import { QueryInput } from "./API";
 
 export async function createObject(db: Database, collection: string, object: QueryInput) {
@@ -33,4 +33,12 @@ export function deleteObject(db: Database, collection: string, id: string) {
     .catch((error) => {
         console.error("Error removing item: ", error);
     })
+}
+
+export async function updateObject(db: Database, collection: string, id: string, updatedData: object) {
+    console.log("Updating item with id: ", id);
+    const itemRef = ref(db, `${collection}/${id}`);
+
+    const response = await update(itemRef, updatedData);
+    return response;
 }

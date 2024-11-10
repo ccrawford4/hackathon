@@ -1,5 +1,6 @@
 'use client';
 import MeetingChat from "@/app/components/MeetingChat";
+import { useDatabase } from "@/app/providers/AppContext";
 import { useParams } from "next/navigation";
 
 const demoData = {
@@ -18,6 +19,7 @@ const demoData = {
 
 export default function MeetingChatPage() {
     const meetingId = useParams().id as string;
+    const db = useDatabase();
     console.log("meeting id: ", meetingId);
     return (
         <div className="min-h-screen bg-[#7000FF]">
@@ -26,6 +28,7 @@ export default function MeetingChatPage() {
                 title="Discussing UX Patterns"
                 messages={demoData.messages}
                 participants={demoData.members}
+                db={db}
             />
         </div>
     );

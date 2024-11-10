@@ -28,6 +28,8 @@ export default function MeetingDetail() {
     const meeting = await getItem(db, "meetings", id as string);
     const tags = await getMeetingTags(db, meeting.id);
     const users = await listAll(db, "users", tenantId);
+
+    console.log("Users: ", users);
     setMeeting(meeting as Meeting);
     setTags(tags as TagWithDetails[]);
     setUsers(users as CustomUser[]);

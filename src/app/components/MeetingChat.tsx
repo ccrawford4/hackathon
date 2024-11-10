@@ -3,7 +3,7 @@ import React from 'react';
 import { IconButton, Avatar } from '@mui/material';
 import { Close, Chat, Mic, PanTool } from '@mui/icons-material';
 import Link from 'next/link';
-import { Member } from './types';
+import { Member } from '@/lib/API';
 
 interface MeetingChatProps {
     title: string;

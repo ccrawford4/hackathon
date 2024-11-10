@@ -1,5 +1,5 @@
 'use client';
-import MeetingChat from '../../components/MeetingChat';
+import MeetingChat from "@/app/components/MeetingChat";
 
 const demoData = {
     members: [

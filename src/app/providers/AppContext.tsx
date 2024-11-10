@@ -102,6 +102,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             console.log("Name: ", firstName, lastName);
             console.log("Email: ", email);
 
+            console.log("User: ", user);
+            console.log("Name: ", firstName, lastName);
+            console.log("Email: ", email);
+
             const userObject = await getUser(database, email);
             if (!userObject) {
                 await createObject(database, "users", {
@@ -117,6 +121,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 });
                 
             } else {
+                console.log("userObject: ", userObject);
                 console.log("userObject: ", userObject);
                 setUserId(userObject.id);
             }

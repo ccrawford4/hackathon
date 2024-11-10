@@ -1,5 +1,6 @@
 'use client';
-import MeetingChat from '../../components/meeting/MeetingChat';
+import MeetingChat from "@/app/components/MeetingChat";
+import { useParams } from "next/navigation";
 
 const demoData = {
     members: [
@@ -16,9 +17,12 @@ const demoData = {
 };
 
 export default function MeetingChatPage() {
+    const meetingId = useParams().id as string;
+    console.log("meeting id: ", meetingId);
     return (
         <div className="min-h-screen bg-[#7000FF]">
             <MeetingChat
+                meetingId={meetingId}
                 title="Discussing UX Patterns"
                 messages={demoData.messages}
                 participants={demoData.members}

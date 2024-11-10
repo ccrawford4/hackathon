@@ -40,6 +40,7 @@ export default function LandingPage() {
   const [addMeeting, setAddMeeting] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<CustomUser[]>([]);
   const [meetingName, setMeetingName] = useState("");
+  const [numMeetings, setNumMeetings] = useState(0);
   const database = useDatabase();
   const { tenantId } = useAuth();
 
@@ -47,7 +48,6 @@ export default function LandingPage() {
     try {
       setLoading(true);
 
-      console.log("tenantId: ", tenantId);
       // Load meetings
       const result = await listAll(database, "meetings", tenantId);
       if (!result) {
@@ -55,53 +55,41 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
-
-      console.log("Meetings result: ", result);
-
-      const newMeetings: Meeting[] = result.map((entry) => ({
+      setMeetings(result.map((entry) => ({
         id: entry.id,
         data: entry.data as Meeting["data"],
-      }));
-      setMeetings(newMeetings);
+      })));
+      setNumMeetings(result.length);
 
-
-      console.log("tenantId: ", tenantId);
-      // Load the users
       const usersResult = await listAll(database, "users", tenantId);
       if (!usersResult) {
-        console.error("No data found");
+        console.error("No users found");
         setLoading(false);
         return;
       }
-
-      console.log("usersResult: ", usersResult);
-
       setUsers(usersResult.map((entry) => ({
         id: entry.id,
         data: entry.data as CustomUser["data"],
       })));
 
-      // Load tags
-      const tagsResult = await listAll(database, "tags", tenantId);
-      if (!tagsResult) {
-        console.error("No data found");
+      const tags = await listAll(database, "tags", tenantId);
+      if (!tags) {
+        console.error("No tags found");
         setLoading(false);
         return;
       }
-
-      console.log("tagsResult: ", tagsResult);
-
-      setAvailableTags(tagsResult.map((entry) => ({
+      setAvailableTags(tags.map((entry) => ({
         id: entry.id,
         data: entry.data as Tag["data"],
       })));
 
+      console.log("Available tags: ", availableTags);
       setLoading(false);
     } catch (error) {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-  }, [tenantId, database]);
+  }, [availableTags, tenantId, database]);
 
 
   useEffect(() => {
@@ -136,6 +124,7 @@ export default function LandingPage() {
       data: {
         meetingId: response.id,
         userId: user.id,
+        tenantId: tenantId as string,
       },
     }));
 
@@ -143,6 +132,21 @@ export default function LandingPage() {
     if (!users) { 
       console.error("Error creating meeting users");
     }
+
+    const meetingTags: QueryInput[] = tags.map((tag) => ({
+      data: {
+        meetingId: response.id,
+        tagId: tag.id,
+        tenantId: tenantId as string,
+      },
+    }));
+    const meetingTagsResponse = await createObjects(database, "meetingTags", meetingTags);
+    console.log("Meeting tags response: ", meetingTagsResponse);
+    if (!meetingTagsResponse) {
+      console.error("Error creating meeting tags");
+    }
+
+    setNumMeetings(numMeetings + 1);
     setAddMeeting(false);
   }
 
@@ -203,7 +207,7 @@ export default function LandingPage() {
 
           <Box sx={{ p: 2 }}>
             {meetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} />
+              <MeetingCard key={meeting.id} meeting={meeting} numMeetings={numMeetings}/>
             ))}
           </Box>
         </Box>

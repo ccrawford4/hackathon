@@ -2,7 +2,7 @@ export interface Tenant {
   id: string;
   data: {
     name: string;
-  }
+  };
 }
 
 export interface QueryResult {
@@ -25,9 +25,12 @@ export interface Meeting {
 }
 
 export interface MeetingTag {
-  meetingId: string;
-  tenantId: string;
-  tagId: string;
+  id: string;
+  data: {
+    meetingId: string;
+    tenantId: string;
+    tagId: string;
+  };
 }
 
 export interface Tag {
@@ -35,20 +38,22 @@ export interface Tag {
   data: {
     color: string;
     name: string;
-  }
+  };
 }
 
-export interface TagWithDetails extends Tag {
-  id: string;
+export interface TagWithDetails {
+  name: string;
+  color: string;
 }
 
 export interface CustomUser {
   id: string;
   data: {
-    tenantId: string;
-    firstName: string;
-    lastName: string;
-    email: string;
+    tenantId?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    profileURL?: string;
   };
 }
 
@@ -57,5 +62,37 @@ export interface MeetingUser {
   data: {
     meetingId: string;
     userId: string;
-  }
+  };
+}
+
+export interface Member {
+  id: string;
+  name: string;
+  avatar: string;
+  isSelected?: boolean;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+}
+
+export interface Message {
+  id: string;
+  member: Member;
+  text: string;
+}
+
+export interface MeetingDetailsProps {
+  title: string;
+  categories: Category[];
+  members: Member[];
+  dateTime: string;
+  onStart: () => void;
+}
+
+export interface MeetingChatProps {
+  title: string;
+  messages: Message[];
+  participants: Member[];
 }

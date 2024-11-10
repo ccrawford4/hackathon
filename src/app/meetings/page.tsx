@@ -47,7 +47,7 @@ export default function LandingPage() {
   const database = useDatabase();
   const { tenantId } = useAuth();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const [filteredMeetings, setFilteredMeetings] = useState<Meeting[]>([]);
+  const [, setFilteredMeetings] = useState<Meeting[]>([]);
   const [searchText, setSearchText] = useState('');
   const [autocompleteKey, setAutocompleteKey] = useState(0);
 

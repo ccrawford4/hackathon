@@ -19,7 +19,7 @@ import { listAll } from "@/lib/queries";
 import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
-import { createObject, createObjects } from "@/lib/mutations";
+import { createObject, createObjects, deleteObject } from "@/lib/mutations";
 
 const darkTheme = createTheme({
   palette: {
@@ -150,6 +150,12 @@ export default function LandingPage() {
     setAddMeeting(false);
   }
 
+  const handleDeleteMeeting = (meetingId: string) => {
+    deleteObject(database, "meetings", meetingId);
+    setMeetings((prevMeetings) => prevMeetings.filter((meeting) => meeting.id !== meetingId));
+    setNumMeetings(numMeetings - 1);
+  }
+
 
   // TODO: Change to use a react spinner instead
   if (loading) {
@@ -207,7 +213,12 @@ export default function LandingPage() {
 
           <Box sx={{ p: 2 }}>
             {meetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} numMeetings={numMeetings}/>
+              <MeetingCard 
+                key={meeting.id} 
+                meeting={meeting} 
+                numMeetings={numMeetings}
+                 deleteMeeting={handleDeleteMeeting}
+              />
             ))}
           </Box>
         </Box>

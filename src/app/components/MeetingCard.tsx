@@ -6,10 +6,12 @@ import { Paper, Typography, Stack, Chip } from "@mui/material";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useDatabase } from "../providers/AppContext";
+import { Delete } from "@mui/icons-material";
 
 interface MeetingCardProps {
   meeting: Meeting;
   numMeetings: number;
+  deleteMeeting: (meetingId: string) => void;
 }
 
 export default function MeetingCard(props: MeetingCardProps) {
@@ -53,10 +55,14 @@ export default function MeetingCard(props: MeetingCardProps) {
           },
         }}
       >
-        <Typography variant="h5" gutterBottom>
-          {props.meeting.data.title}
-        </Typography>
-
+        {/* Stack for layout with title and delete icon spaced apart */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h5" gutterBottom>
+            {props.meeting.data.title}
+          </Typography>
+          <Delete sx={{ cursor: "pointer" }} onClick={props.deleteMeeting}/>
+        </Stack>
+  
         {/* Stack for horizontal tag layout with wrapping */}
         <Stack
           direction="row"
@@ -83,5 +89,5 @@ export default function MeetingCard(props: MeetingCardProps) {
         </Stack>
       </Paper>
     </Link>
-  );
+  );  
 }

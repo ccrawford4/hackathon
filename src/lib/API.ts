@@ -45,11 +45,11 @@ export interface TagWithDetails extends Tag {
 export interface CustomUser {
   id: string;
   data: {
-    tenantId: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    profileURL: string;
+    tenantId?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    profileURL?: string;
   };
 }
 

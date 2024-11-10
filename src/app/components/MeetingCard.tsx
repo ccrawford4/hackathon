@@ -6,7 +6,7 @@ import { Paper, Typography, Stack, Chip } from "@mui/material";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useDatabase } from "../providers/AppContext";
-import { format, isPast, isFuture, isAfter } from "date-fns";
+import { format, isPast } from "date-fns";
 
 interface MeetingCardProps {
   meeting: Meeting;

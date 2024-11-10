@@ -1,11 +1,10 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState} from "react";
 import { IconButton, Avatar, Button } from "@mui/material";
 import { Close, Chat, Mic, PanTool } from "@mui/icons-material";
 import Link from "next/link";
 import { Member } from "@/lib/API";
 import { useRouter } from "next/navigation";
-import { useDatabase, useUserId } from "../providers/AppContext";
 import { FcEndCall } from "react-icons/fc";
 import { updateObject } from "@/lib/mutations";
 import { Database } from "firebase/database";
@@ -30,10 +29,10 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
   db,
 }) => {
   const router = useRouter();
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const userId = useUserId();
+  // const [socket, setSocket] = useState<WebSocket | null>(null);
+  // const userId = useUserId();
 
-  const [transcripts, setTranscripts] = useState<string[]>([]);
+  const [transcripts,] = useState<string[]>([]);
 
   // useEffect(() => {
   //     const ws = new WebSocket(`ws://localhost:8000/ws/meeting/${meetingId}/`);

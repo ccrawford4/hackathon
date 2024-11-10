@@ -32,7 +32,6 @@ export const getMeetingTags = async (
   meetingId: string
 ): Promise<TagWithDetails[]> => {
   try {
-    console.log("meetingId: ", meetingId);
     // 1. Query meetingTags to get all entries for this meetingId
     const meetingTagsRef = ref(db, "meetingTags");
     const meetingTagsQuery = query(
@@ -53,7 +52,8 @@ export const getMeetingTags = async (
     const tagIds = new Set<string>();
 
     meetingTagsSnapshot.forEach((child) => {
-      const meetingTag = child.val() as MeetingTag;
+      const meetingTag = child.val();
+      console.log("Meeting tag:", meetingTag);
       if (meetingTag.tagId) {
         tagIds.add(meetingTag.tagId);
         // Get tag details for each tagId
@@ -69,7 +69,7 @@ export const getMeetingTags = async (
     const tags: TagWithDetails[] = tagSnapshots
       .filter((snapshot) => snapshot.exists())
       .map((snapshot) => ({
-        ...(snapshot.val() as Tag),
+        ...(snapshot.val() as TagWithDetails),
       }));
 
     return tags;

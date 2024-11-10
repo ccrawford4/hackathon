@@ -1,6 +1,6 @@
 "use client";
 
-import { Meeting, TagWithDetails } from "@/lib/API";
+import { Meeting, Tag, TagWithDetails } from "@/lib/API";
 import { getMeetingTags } from "@/lib/helpers";
 import { Paper, Typography, Stack, Chip } from "@mui/material";
 import Link from "next/link";
@@ -17,7 +17,10 @@ export default function MeetingCard(props: MeetingCardProps) {
 
   const loadTags = useCallback(async () => {
     try {
+      console.log("Meeting Id: ", props.meeting.id);
       const tags = await getMeetingTags(db, props.meeting.id);
+
+      console.log("Tags: ", tags);
       setTags(tags);
     } catch (error) {
       console.error("Error loading tags: ", error);
@@ -62,12 +65,12 @@ export default function MeetingCard(props: MeetingCardProps) {
             gap: 1, // Gap between wrapped rows
           }}
         >
-          {tags.map((tag) => (
+          {tags.map((tag, index) => (
             <Chip
-              key={tag.id}
-              label={tag.data.name}
+              key={index}
+              label={tag.name}
               sx={{
-                backgroundColor: tag.data.color || "rgba(255, 255, 255, 0.1)",
+                backgroundColor: tag.color || "rgba(255, 255, 255, 0.1)",
                 borderRadius: "16px",
                 color: "white",
                 "& .MuiChip-label": {

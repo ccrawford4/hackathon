@@ -16,10 +16,11 @@ import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useDatabase } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
-import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
+import { Meeting, QueryInput, Tag, CustomUser, MeetingTag, MeetingDetailsProps } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
+import { getMeetingTags } from "@/lib/helpers";
 
 const darkTheme = createTheme({
   palette: {
@@ -47,7 +48,6 @@ export default function LandingPage() {
     try {
       setLoading(true);
 
-      console.log("tenantId: ", tenantId);
       // Load meetings
       const result = await listAll(database, "meetings", tenantId);
       if (!result) {
@@ -55,47 +55,34 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
-
-      console.log("Meetings result: ", result);
-
-      const newMeetings: Meeting[] = result.map((entry) => ({
+      setMeetings(result.map((entry) => ({
         id: entry.id,
         data: entry.data as Meeting["data"],
-      }));
-      setMeetings(newMeetings);
+      })));
 
-
-      console.log("tenantId: ", tenantId);
-      // Load the users
       const usersResult = await listAll(database, "users", tenantId);
       if (!usersResult) {
-        console.error("No data found");
+        console.error("No users found");
         setLoading(false);
         return;
       }
-
-      console.log("usersResult: ", usersResult);
-
       setUsers(usersResult.map((entry) => ({
         id: entry.id,
         data: entry.data as CustomUser["data"],
       })));
 
-      // Load tags
-      const tagsResult = await listAll(database, "tags", tenantId);
-      if (!tagsResult) {
-        console.error("No data found");
+      const tags = await listAll(database, "tags", tenantId);
+      if (!tags) {
+        console.error("No tags found");
         setLoading(false);
         return;
       }
-
-      console.log("tagsResult: ", tagsResult);
-
-      setAvailableTags(tagsResult.map((entry) => ({
+      setAvailableTags(tags.map((entry) => ({
         id: entry.id,
         data: entry.data as Tag["data"],
       })));
 
+      console.log("Available tags: ", availableTags);
       setLoading(false);
     } catch (error) {
       console.error("Error loading page: ", error);
@@ -136,12 +123,25 @@ export default function LandingPage() {
       data: {
         meetingId: response.id,
         userId: user.id,
+        tenantId: tenantId as string,
       },
     }));
 
     const users = await createObjects(database, "meetingUsers", meetingUsers);
     if (!users) { 
       console.error("Error creating meeting users");
+    }
+
+    const meetingTags: QueryInput[] = tags.map((tag) => ({
+      data: {
+        meetingId: response.id,
+        tagId: tag.id,
+        tenantId: tenantId as string,
+      },
+    }));
+    const meetingTagsResponse = await createObjects(database, "meetingTags", meetingTags);
+    if (!meetingTagsResponse) {
+      console.error("Error creating meeting tags");
     }
     setAddMeeting(false);
   }

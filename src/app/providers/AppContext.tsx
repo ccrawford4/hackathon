@@ -126,7 +126,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     const logout = async () => {
         await signOut(auth);
-        // Optionally clear tenantId on logout
         setTenantId(null);
     };
     

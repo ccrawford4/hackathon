@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -14,7 +13,13 @@ import {
   InputAdornment,
 } from "@mui/material";
 
-import { Search, Settings, AccountCircle, Add, Clear } from "@mui/icons-material";
+import {
+  Search,
+  Settings,
+  AccountCircle,
+  Add,
+  Clear,
+} from "@mui/icons-material";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useDatabase, useUserId } from "../providers/AppContext";
@@ -24,7 +29,6 @@ import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
-
 
 const darkTheme = createTheme({
   palette: {
@@ -48,7 +52,7 @@ export default function LandingPage() {
   const [numMeetings, setNumMeetings] = useState(0);
   const database = useDatabase();
   const { tenantId } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState<Meeting[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const userID = useUserId()?.toString();
@@ -56,12 +60,15 @@ export default function LandingPage() {
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       setIsSearching(true);
-      if (!userID) return
+      if (!userID) return;
       const meetingids = await getMeetingObject(database, userID?.toString());
-      const results = meetings.filter(meetings =>
-        (meetings.data.title.toLowerCase().includes(searchTerm.toLowerCase()) ||  
-        tags.toString().toLowerCase().includes(searchTerm.toLowerCase()))
-        && meetingids.includes(meetings.id)
+      const results = meetings.filter(
+        (meetings) =>
+          (meetings.data.title
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+            tags.toString().toLowerCase().includes(searchTerm.toLowerCase())) &&
+          meetingids.includes(meetings.id)
       );
       setFilteredItems(results);
       setIsSearching(false);
@@ -82,10 +89,12 @@ export default function LandingPage() {
         return;
       }
       console.log("RESULT: ", result);
-      setMeetings(result.map((entry) => ({
-        id: entry.id,
-        data: entry.data as Meeting["data"],
-      })));
+      setMeetings(
+        result.map((entry) => ({
+          id: entry.id,
+          data: entry.data as Meeting["data"],
+        }))
+      );
       setNumMeetings(result.length);
 
       const usersResult = await listAll(database, "users", tenantId);
@@ -94,10 +103,12 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
-      setUsers(usersResult.map((entry) => ({
-        id: entry.id,
-        data: entry.data as CustomUser["data"],
-      })));
+      setUsers(
+        usersResult.map((entry) => ({
+          id: entry.id,
+          data: entry.data as CustomUser["data"],
+        }))
+      );
 
       const tags = await listAll(database, "tags", tenantId);
       if (!tags) {
@@ -105,10 +116,12 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
-      setAvailableTags(tags.map((entry) => ({
-        id: entry.id,
-        data: entry.data as Tag["data"],
-      })));
+      setAvailableTags(
+        tags.map((entry) => ({
+          id: entry.id,
+          data: entry.data as Tag["data"],
+        }))
+      );
 
       console.log("Available tags: ", availableTags);
       setLoading(false);
@@ -118,7 +131,6 @@ export default function LandingPage() {
     }
   }, [tenantId, database]);
 
-
   useEffect(() => {
     loadPage();
   }, [loadPage]);
@@ -127,36 +139,50 @@ export default function LandingPage() {
     setMeetingName("");
     setSelectedUsers([]);
     setTags([]);
-  }
-
+  };
 
   const handleCreateMeeting = async () => {
     const newMeeting: QueryInput = {
       data: {
         tenantId: tenantId as string,
         title: meetingName,
+        createdAt: new Date().toISOString(),
       },
-    }
+    };
 
     const response = await createObject(database, "meetings", newMeeting);
+    console.log("New Meeting: ", response);
 
     const newMeetingObject: Meeting = {
       id: response.id,
       data: response.data as Meeting["data"],
-    }
+    };
     setMeetings((prevMeetings) => prevMeetings.concat(newMeetingObject));
     reset();
 
-    const meetingUsers: QueryInput[] = selectedUsers.map((user) => ({
-      data: {
-        meetingId: response.id,
-        userId: user.id,
-        tenantId: tenantId as string,
-      },
-    }));
+    const meetingUsers: QueryInput[] = [
+      ...selectedUsers.map((user) => ({
+        data: {
+          meetingId: response.id,
+          userId: user.id,
+          tenantId: tenantId as string,
+        },
+      })),
+    ];
+
+    // Check if currentUserId is already included in selectedUsers
+    if (!selectedUsers.some((user) => user.id === userID)) {
+      meetingUsers.push({
+        data: {
+          meetingId: response.id,
+          userId: userID,
+          tenantId: tenantId as string,
+        },
+      });
+    }
 
     const users = await createObjects(database, "meetingUsers", meetingUsers);
-    if (!users) { 
+    if (!users) {
       console.error("Error creating meeting users");
     }
 
@@ -167,7 +193,11 @@ export default function LandingPage() {
         tenantId: tenantId as string,
       },
     }));
-    const meetingTagsResponse = await createObjects(database, "meetingTags", meetingTags);
+    const meetingTagsResponse = await createObjects(
+      database,
+      "meetingTags",
+      meetingTags
+    );
     console.log("Meeting tags response: ", meetingTagsResponse);
     if (!meetingTagsResponse) {
       console.error("Error creating meeting tags");
@@ -175,8 +205,7 @@ export default function LandingPage() {
 
     setNumMeetings(numMeetings + 1);
     setAddMeeting(false);
-  }
-
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -208,9 +237,9 @@ export default function LandingPage() {
               <TextField
                 size="small"
                 sx={{
-                  width: '300px',
+                  width: "300px",
                   marginTop: 2,
-                  marginBottom: 2
+                  marginBottom: 2,
                 }}
                 variant="outlined"
                 value={searchTerm}
@@ -222,18 +251,18 @@ export default function LandingPage() {
                       <Search />
                     </InputAdornment>
                   ),
-                  endAdornment: searchTerm && (  // Only show clear button if there's text
+                  endAdornment: searchTerm && ( // Only show clear button if there's text
                     <InputAdornment position="end">
                       <IconButton
                         size="small"
-                        onClick={() => setSearchTerm('')}
+                        onClick={() => setSearchTerm("")}
                         edge="end"
                         aria-label="clear search"
                       >
                         <Clear fontSize="small" />
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
                 }}
               />
               <IconButton color="inherit" size="large">
@@ -245,7 +274,7 @@ export default function LandingPage() {
             </Toolbar>
           </AppBar>
 
-          <NewMeeting 
+          <NewMeeting
             addMeeting={addMeeting}
             setAddMeeting={setAddMeeting}
             users={users}

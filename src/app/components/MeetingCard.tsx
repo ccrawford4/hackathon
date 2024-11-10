@@ -6,6 +6,7 @@ import { Paper, Typography, Stack, Chip } from "@mui/material";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useDatabase } from "../providers/AppContext";
+import { format, isPast } from "date-fns";
 
 interface MeetingCardProps {
   meeting: Meeting;
@@ -13,6 +14,7 @@ interface MeetingCardProps {
 }
 
 export default function MeetingCard(props: MeetingCardProps) {
+  const { meeting, numMeetings } = props;
   const [tags, setTags] = useState<TagWithDetails[]>([]);
   const db = useDatabase();
 
@@ -30,49 +32,153 @@ export default function MeetingCard(props: MeetingCardProps) {
 
   useEffect(() => {
     loadTags();
-  }, [loadTags, props.numMeetings]); // Add loadTags as a dependency to useEffect
+  }, [loadTags, numMeetings]); // Add loadTags as a dependency to useEffect
+
+  const getMeetingStatus = () => {
+    const now = new Date();
+    const createdAt = new Date(meeting.data.createdAt as string);
+    const endAt = new Date(meeting.data.endAt as string);
+
+
+    if (!meeting.data.startAt) {
+      // If the meeting was recently created (within last 24 hours)
+      const isNew = now.getTime() - createdAt.getTime() < 24 * 60 * 60 * 1000;
+
+      if (isNew) {
+        return {
+          label: "Just Added",
+          color: "bg-purple-500/10 text-purple-500",
+          dotColor: "bg-purple-500",
+        };
+      }
+      return {
+        label: "Upcoming",
+        color: "bg-blue-500/10 text-blue-500",
+        dotColor: "bg-blue-500",
+      };
+    } else if (isPast(endAt)) {
+      return {
+        label: "Ended",
+        color: "bg-gray-500/10 text-gray-500",
+        dotColor: "bg-gray-500",
+      };
+    } else {
+      return {
+        label: "In Progress",
+        color: "bg-green-500/10 text-green-500",
+        dotColor: "bg-green-500",
+      };
+    }
+  };
+
+  const status = getMeetingStatus();
 
   return (
     <Link
-      href={`/meetings/${props.meeting.id}`}
-      key={props.meeting.id}
-      style={{ textDecoration: "none", color: "inherit" }}
+      href={`/meetings/${meeting.id}`}
+      className="block no-underline text-inherit transition-all duration-200"
     >
       <Paper
         elevation={0}
+        className="mb-3 p-6 border-b border-divider hover:bg-white/[0.02] transition-all duration-200"
         sx={{
-          mb: 3,
-          p: 2,
           backgroundColor: "background.paper",
-          borderBottom: 1,
-          borderColor: "divider",
           borderRadius: 0,
-          cursor: "pointer",
-          "&:hover": {
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
-          },
         }}
       >
-        <Typography variant="h5" gutterBottom>
-          {props.meeting.data.title}
-        </Typography>
+        <div className="flex items-start justify-between mb-4">
+          <Typography variant="h5" className="font-medium">
+            {meeting.data.title}
+          </Typography>
 
-        {/* Stack for horizontal tag layout with wrapping */}
-        <Stack
-          direction="row"
-          spacing={1}
-          sx={{
-            flexWrap: "wrap",
-            gap: 1, // Gap between wrapped rows
-          }}
-        >
+          <div
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${status.color}`}
+          >
+            <div
+              className={`w-2 h-2 rounded-full ${status.dotColor} animate-pulse`}
+            />
+            <span className="text-sm font-medium">{status.label}</span>
+          </div>
+        </div>
+
+        {meeting.data.startAt && (
+          <>
+            <div className="flex items-center gap-1.5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span>
+                {format(
+                  new Date(meeting.data.startAt as string),
+                  "MMM dd, yyyy"
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                {format(new Date(meeting.data.startAt as string), "HH:mm")}
+              </span>
+            </div>
+          </>
+        )}
+        <div className="flex items-center gap-3 text-gray-400 text-sm mb-4">
+          {status.label === "Just Added" && (
+            <div className="flex items-center gap-1.5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                Created{" "}
+                {format(new Date(meeting.data.createdAt as string), "MMM dd")}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <Stack direction="row" spacing={1} className="flex-wrap gap-1">
           {tags.map((tag, index) => (
             <Chip
               key={index}
               label={tag.name}
+              className="rounded-full font-medium"
               sx={{
                 backgroundColor: tag.color || "rgba(255, 255, 255, 0.1)",
-                borderRadius: "16px",
                 color: "white",
                 "& .MuiChip-label": {
                   fontWeight: 500,

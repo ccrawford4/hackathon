@@ -75,6 +75,8 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
         return () => {
             ws.close();
         };
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [meetingId, transcripts]);
 
     const startRecording = useCallback((socket: WebSocket) => {
@@ -104,6 +106,8 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
             .catch((error) => {
                 console.error('Error accessing microphone:', error);
             });
+
+            // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket]);
 
     return (

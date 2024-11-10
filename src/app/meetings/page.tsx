@@ -9,9 +9,11 @@ import {
   Typography,
   ThemeProvider,
   createTheme,
+  Autocomplete,
+  TextField,
 } from "@mui/material";
 
-import { Search, Settings, AccountCircle, Add } from "@mui/icons-material";
+import { Search, Settings, AccountCircle, Add, Close } from "@mui/icons-material";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useDatabase } from "../providers/AppContext";
@@ -20,6 +22,7 @@ import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
+import CircleLoader from "react-spinners/CircleLoader";
 
 const darkTheme = createTheme({
   palette: {
@@ -43,6 +46,10 @@ export default function LandingPage() {
   const [numMeetings, setNumMeetings] = useState(0);
   const database = useDatabase();
   const { tenantId } = useAuth();
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [filteredMeetings, setFilteredMeetings] = useState<Meeting[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [autocompleteKey, setAutocompleteKey] = useState(0);
 
   const loadPage = useCallback(async () => {
     try {
@@ -55,10 +62,15 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
+      console.log("RESULT: ", result);
       setMeetings(result.map((entry) => ({
         id: entry.id,
         data: entry.data as Meeting["data"],
       })));
+      setMeetings(meetings);
+      setFilteredMeetings(meetings);
+
+      // Load the users
       setNumMeetings(result.length);
 
       const usersResult = await listAll(database, "users", tenantId);
@@ -67,6 +79,7 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
+
       setUsers(usersResult.map((entry) => ({
         id: entry.id,
         data: entry.data as CustomUser["data"],
@@ -89,8 +102,7 @@ export default function LandingPage() {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-  }, [tenantId, database]);
-
+  }, [meetings, tenantId, database]);
 
   useEffect(() => {
     loadPage();
@@ -102,6 +114,19 @@ export default function LandingPage() {
     setTags([]);
   }
 
+  const handleSearchTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value.toLowerCase();
+    setSearchText(value);
+
+    if (value === '') {
+      setFilteredMeetings(meetings);
+    } else {
+      const filtered = meetings.filter(meeting =>
+        meeting.data.title?.toLowerCase().includes(value)
+      );
+      setFilteredMeetings(filtered);
+    }
+  };
 
   const handleCreateMeeting = async () => {
     const newMeeting: QueryInput = {
@@ -118,6 +143,7 @@ export default function LandingPage() {
       data: response.data as Meeting["data"],
     }
     setMeetings((prevMeetings) => prevMeetings.concat(newMeetingObject));
+    setFilteredMeetings((prevMeetings) => prevMeetings.concat(newMeetingObject));
     reset();
 
     const meetingUsers: QueryInput[] = selectedUsers.map((user) => ({
@@ -129,7 +155,7 @@ export default function LandingPage() {
     }));
 
     const users = await createObjects(database, "meetingUsers", meetingUsers);
-    if (!users) { 
+    if (!users) {
       console.error("Error creating meeting users");
     }
 
@@ -150,10 +176,12 @@ export default function LandingPage() {
     setAddMeeting(false);
   }
 
-
-  // TODO: Change to use a react spinner instead
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <CircleLoader color="#ff00ed" size={500} />
+      </div>
+    );
   }
 
   return (
@@ -169,29 +197,91 @@ export default function LandingPage() {
             sx={{ backgroundColor: "background.paper" }}
           >
             <Toolbar>
-              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                Meetings
-              </Typography>
-              <IconButton
-                onClick={() => setAddMeeting(!addMeeting)}
-                color="inherit"
-                size="large"
-              >
-                <Add />
-              </IconButton>
-              <IconButton color="inherit" size="large">
-                <Search />
-              </IconButton>
-              <IconButton color="inherit" size="large">
-                <Settings />
-              </IconButton>
-              <IconButton color="inherit" size="large">
-                <AccountCircle />
-              </IconButton>
+              {isSearchVisible ? (
+                <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+                  <Autocomplete
+                    key={autocompleteKey}
+                    sx={{ flexGrow: 1 }}
+                    options={meetings}
+                    getOptionLabel={(option: Meeting | string) =>
+                      typeof option === 'string' ? option : option.data.title || ""
+                    }
+                    inputValue={searchText}
+                    onInputChange={(event, newInputValue) => {
+                      setSearchText(newInputValue);
+                    }}
+                    onChange={(event, value: Meeting | string | null) => {
+                      if (value && typeof value !== 'string') {
+                        setFilteredMeetings([value]);
+                        setSearchText(value.data.title || "");
+                      }
+                    }}
+                    freeSolo
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        variant="standard"
+                        placeholder="Search meetings..."
+                        autoFocus
+                        onChange={handleSearchTextChange}
+                        sx={{
+                          '& .MuiInput-root': {
+                            color: 'inherit',
+                          },
+                          '& .MuiInput-underline:before': {
+                            borderBottomColor: 'rgba(255, 255, 255, 0.7)',
+                          },
+                          '& .MuiInput-underline:hover:before': {
+                            borderBottomColor: 'rgba(255, 255, 255, 0.9)',
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                  <IconButton
+                    color="inherit"
+                    onClick={() => {
+                      setIsSearchVisible(false);
+                      setSearchText('');
+                      setFilteredMeetings(meetings);
+                      setAutocompleteKey(prev => prev + 1);
+                    }}
+                    sx={{ ml: 1 }}
+                  >
+                    <Close />
+                  </IconButton>
+                </Box>
+              ) : (
+                <>
+                  <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                    OneFlow
+                  </Typography>
+                  <IconButton
+                    onClick={() => setAddMeeting(!addMeeting)}
+                    color="inherit"
+                    size="large"
+                  >
+                    <Add />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => setIsSearchVisible(true)}
+                    color="inherit"
+                    size="large"
+                  >
+                    <Search />
+                  </IconButton>
+                  <IconButton color="inherit" size="large">
+                    <Settings />
+                  </IconButton>
+                  <IconButton color="inherit" size="large">
+                    <AccountCircle />
+                  </IconButton>
+                </>
+              )}
             </Toolbar>
           </AppBar>
 
-          <NewMeeting 
+          <NewMeeting
             addMeeting={addMeeting}
             setAddMeeting={setAddMeeting}
             users={users}
@@ -207,7 +297,11 @@ export default function LandingPage() {
 
           <Box sx={{ p: 2 }}>
             {meetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} numMeetings={numMeetings}/>
+              <MeetingCard 
+                key={meeting.id} 
+                meeting={meeting} 
+                numMeetings={numMeetings}
+              />
             ))}
           </Box>
         </Box>

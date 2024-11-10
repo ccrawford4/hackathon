@@ -89,7 +89,7 @@ export default function LandingPage() {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-  }, [availableTags, tenantId, database]);
+  }, [tenantId, database]);
 
 
   useEffect(() => {
@@ -158,7 +158,7 @@ export default function LandingPage() {
 
   return (
     <RequireAuthToolBar>
-      <ThemeProvider theme={darkTheme}>
+     <ThemeProvider theme={darkTheme}>
         <CssBaseline />
         <Box
           sx={{ flexGrow: 1, minHeight: "100vh", pb: 10, position: "relative" }}

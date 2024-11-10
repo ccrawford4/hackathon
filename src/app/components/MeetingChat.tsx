@@ -282,7 +282,7 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
               key={participant.id}
               className="flex flex-col items-center space-y-1"
             >
-              <Avatar src={participant.data.lastName} className="w-10 h-10" />
+              <Avatar src={participant.data.profileURL} className="w-10 h-10" />
               <p className="text-sm whitespace-nowrap">{participant.data.firstName}</p>
             </div>
           ))}

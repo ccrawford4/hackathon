@@ -31,6 +31,7 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
 
     useEffect(() => {
         const ws = new WebSocket(`${process.env.NEXT_PUBLIC_CHAT_WEB_SOCKET_URL}/ws/meeting/${meetingId}`);
+        // const ws = new WebSocket(`ws://localhost:8000/ws/meeting/${meetingId}`);
         setSocket(ws);
 
         ws.onopen = () => {
@@ -62,7 +63,10 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
                 const transcript = json;
                 setTranscripts([...transcripts, transcript]);
             } else {
+                console.log("event.data: ", event.data);
+                console.log("[event.data]: ", event.data);
                 const blob = new Blob([event.data], { type: 'audio/webm' });
+                console.log("blob: ", )
                 const url = URL.createObjectURL(blob);
                 const audio = new Audio(url);
                 audio.play();

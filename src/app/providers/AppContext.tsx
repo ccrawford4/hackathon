@@ -103,6 +103,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const firstName = nameParts[0] || "";
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
+            console.log("User: ", user);
+            console.log("Name: ", firstName, lastName);
+            console.log("Email: ", email);
+
             let userObject = await getUser(database, email);
             if (!userObject) {
                 await createObject(database, "users", {
@@ -118,6 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 });
                 
             } else {
+                console.log("userObject: ", userObject);
                 setUserId(userObject.id);
             }
         } catch (error) {

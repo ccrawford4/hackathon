@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { CustomUser, Meeting, TagWithDetails } from "@/lib/API";
 import { getItem, listAll } from "@/lib/queries";
-import { useDatabase, useTenantId } from "@/app/providers/AppContext";
+import { useDatabase, useTenantId, useUserId } from "@/app/providers/AppContext";
 import { getMeetingTags } from "@/lib/helpers";
 import Link from "next/link";
 import { ArrowBack, Edit } from "@mui/icons-material";
@@ -19,6 +19,7 @@ export default function MeetingDetail() {
   const [users, setUsers] = useState<CustomUser[]>([]);
   const tenantId = useTenantId();
   const router = useRouter();
+  const userId = useUserId();
 
   const onStart = () => {
     router.push(`/meetings/${id}/start`);
@@ -29,7 +30,6 @@ export default function MeetingDetail() {
     const tags = await getMeetingTags(db, meeting.id);
     const users = await listAll(db, "users", tenantId);
 
-    console.log("Users: ", users);
     setMeeting(meeting as Meeting);
     setTags(tags as TagWithDetails[]);
     setUsers(users as CustomUser[]);

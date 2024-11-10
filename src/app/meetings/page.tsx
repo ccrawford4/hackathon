@@ -65,12 +65,11 @@ export default function LandingPage() {
       setMeetings(result.map((entry) => ({
         id: entry.id,
         data: entry.data as Meeting["data"],
-      }));
-      setMeetings(newMeetings);
-      setFilteredMeetings(newMeetings);
+      })));
+      setMeetings(meetings);
+      setFilteredMeetings(meetings);
 
       // Load the users
-      })));
       setNumMeetings(result.length);
 
       const usersResult = await listAll(database, "users", tenantId);
@@ -102,7 +101,7 @@ export default function LandingPage() {
       console.error("Error loading page: ", error);
       setLoading(false);
     }
-  }, [tenantId, database]);
+  }, [meetings, tenantId, database]);
 
   useEffect(() => {
     loadPage();
@@ -296,8 +295,6 @@ export default function LandingPage() {
           />
 
           <Box sx={{ p: 2 }}>
-            {filteredMeetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} />
             {filteredMeetings.map((meeting) => (
               <MeetingCard key={meeting.id} meeting={meeting} numMeetings={numMeetings}/>
             ))}

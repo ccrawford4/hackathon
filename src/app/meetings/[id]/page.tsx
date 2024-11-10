@@ -8,7 +8,8 @@ import { getItem } from "@/lib/queries";
 import { useDatabase } from "@/app/providers/AppContext";
 import { getMeetingTags, getMeetingUsers } from "@/lib/helpers";
 import Link from "next/link";
-import { ArrowBack, Edit } from "@mui/icons-material";
+import { ArrowBack, Delete, Edit } from "@mui/icons-material";
+import { deleteObject } from "@/lib/mutations";
 
 export default function MeetingDetail() {
   const params = useParams();
@@ -41,6 +42,11 @@ export default function MeetingDetail() {
     console.log("USERS: ", users);
   }, [users]);
 
+  const handleDeleteMeeting = () => {
+    deleteObject(db, "meetings", id as string);
+    router.push("/meetings");
+  }
+
   return (
     <div className="text-white p-6">
       <div className="flex justify-between items-center mb-8">
@@ -50,9 +56,14 @@ export default function MeetingDetail() {
           </IconButton>
         </Link>
         <h1 className="text-xl">Meeting details</h1>
+        <div className="justify-end">
+        <IconButton color="inherit" onClick={handleDeleteMeeting}>
+          <Delete />
+        </IconButton>
         <IconButton color="inherit">
           <Edit />
         </IconButton>
+        </div>
       </div>
 
       <div className="space-y-8">

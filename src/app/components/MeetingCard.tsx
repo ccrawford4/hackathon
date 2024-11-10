@@ -6,12 +6,10 @@ import { Paper, Typography, Stack, Chip } from "@mui/material";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useDatabase } from "../providers/AppContext";
-import { Delete } from "@mui/icons-material";
 
 interface MeetingCardProps {
   meeting: Meeting;
   numMeetings: number;
-  deleteMeeting: (meetingId: string) => void;
 }
 
 export default function MeetingCard(props: MeetingCardProps) {
@@ -35,66 +33,55 @@ export default function MeetingCard(props: MeetingCardProps) {
   }, [loadTags, props.numMeetings]); // Add loadTags as a dependency to useEffect
 
   return (
-    <>
-        <Paper
-          elevation={0}
+    <Link
+      href={`/meetings/${props.meeting.id}`}
+      key={props.meeting.id}
+      style={{ textDecoration: "none", color: "inherit" }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 3,
+          p: 2,
+          backgroundColor: "background.paper",
+          borderBottom: 1,
+          borderColor: "divider",
+          borderRadius: 0,
+          cursor: "pointer",
+          "&:hover": {
+            backgroundColor: "rgba(255, 255, 255, 0.05)",
+          },
+        }}
+      >
+        <Typography variant="h5" gutterBottom>
+          {props.meeting.data.title}
+        </Typography>
+
+        {/* Stack for horizontal tag layout with wrapping */}
+        <Stack
+          direction="row"
+          spacing={1}
           sx={{
-            mb: 3,
-            p: 2,
-            backgroundColor: "background.paper",
-            borderBottom: 1,
-            borderColor: "divider",
-            borderRadius: 0,
-            cursor: "pointer",
-            "&:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-            },
+            flexWrap: "wrap",
+            gap: 1, // Gap between wrapped rows
           }}
         >
-          {/* Stack for layout with title and delete icon spaced apart */}
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Typography variant="h5" gutterBottom>
-              {props.meeting.data.title}
-            </Typography>
-            <div
-              onClick={(e) => {
-                e.stopPropagation(); // Prevents the Link from triggering
-                props.deleteMeeting; // Calls the delete function
+          {tags.map((tag, index) => (
+            <Chip
+              key={index}
+              label={tag.name}
+              sx={{
+                backgroundColor: tag.color || "rgba(255, 255, 255, 0.1)",
+                borderRadius: "16px",
+                color: "white",
+                "& .MuiChip-label": {
+                  fontWeight: 500,
+                },
               }}
-            >
-              <Delete sx={{ cursor: "pointer" }} />
-            </div>
-          </Stack>
-  
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              flexWrap: "wrap",
-              gap: 1, // Gap between wrapped rows
-            }}
-            onClick={(e) => e.stopPropagation()} // Prevents the Link from triggering
-          >
-            {tags.map((tag, index) => (
-              <Chip
-                key={index}
-                label={tag.name}
-                sx={{
-                  backgroundColor: tag.color || "rgba(255, 255, 255, 0.1)",
-                  borderRadius: "16px",
-                  color: "white",
-                  "& .MuiChip-label": {
-                    fontWeight: 500,
-                  },
-                }}
-              />
-            ))}
-          </Stack>
-        </Paper>
-    </>
+            />
+          ))}
+        </Stack>
+      </Paper>
+    </Link>
   );
-}  
+}

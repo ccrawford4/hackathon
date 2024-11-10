@@ -151,14 +151,7 @@ export default function LandingPage() {
     setAddMeeting(false);
   }
 
-  const handleDeleteMeeting = (meetingId: string) => {
-    deleteObject(database, "meetings", meetingId);
-    setMeetings((prevMeetings) => prevMeetings.filter((meeting) => meeting.id !== meetingId));
-    setNumMeetings(numMeetings - 1);
-  }
 
-
-  // TODO: Change to use a react spinner instead
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -218,7 +211,6 @@ export default function LandingPage() {
                 key={meeting.id} 
                 meeting={meeting} 
                 numMeetings={numMeetings}
-                 deleteMeeting={handleDeleteMeeting}
               />
             ))}
           </Box>

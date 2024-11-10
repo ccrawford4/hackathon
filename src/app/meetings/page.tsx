@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -9,17 +10,21 @@ import {
   Typography,
   ThemeProvider,
   createTheme,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 
-import { Search, Settings, AccountCircle, Add } from "@mui/icons-material";
+import { Search, Settings, AccountCircle, Add, Clear } from "@mui/icons-material";
 import RequireAuthToolBar from "../components/RequireAuthToolBar";
 import { useCallback, useEffect, useState } from "react";
-import { useAuth, useDatabase } from "../providers/AppContext";
+import { useAuth, useDatabase, useUserId } from "../providers/AppContext";
 import { listAll } from "@/lib/queries";
+import { getMeetingObject } from "@/lib/helpers";
 import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
 import { createObject, createObjects } from "@/lib/mutations";
+
 
 const darkTheme = createTheme({
   palette: {
@@ -43,6 +48,27 @@ export default function LandingPage() {
   const [numMeetings, setNumMeetings] = useState(0);
   const database = useDatabase();
   const { tenantId } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredItems, setFilteredItems] = useState<Meeting[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const userID = useUserId()?.toString();
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      setIsSearching(true);
+      if (!userID) return
+      const meetingids = await getMeetingObject(database, userID?.toString());
+      const results = meetings.filter(meetings =>
+        (meetings.data.title.toLowerCase().includes(searchTerm.toLowerCase()) ||  
+        tags.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+        && meetingids.includes(meetings.id)
+      );
+      setFilteredItems(results);
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, meetings, tags, userID]);
 
   const loadPage = useCallback(async () => {
     try {
@@ -55,6 +81,7 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
+      console.log("RESULT: ", result);
       setMeetings(result.map((entry) => ({
         id: entry.id,
         data: entry.data as Meeting["data"],
@@ -151,7 +178,6 @@ export default function LandingPage() {
   }
 
 
-  // TODO: Change to use a react spinner instead
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -179,9 +205,37 @@ export default function LandingPage() {
               >
                 <Add />
               </IconButton>
-              <IconButton color="inherit" size="large">
-                <Search />
-              </IconButton>
+              <TextField
+                size="small"
+                sx={{
+                  width: '300px',
+                  marginTop: 2,
+                  marginBottom: 2
+                }}
+                variant="outlined"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search items..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchTerm && (  // Only show clear button if there's text
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setSearchTerm('')}
+                        edge="end"
+                        aria-label="clear search"
+                      >
+                        <Clear fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
               <IconButton color="inherit" size="large">
                 <Settings />
               </IconButton>
@@ -204,12 +258,19 @@ export default function LandingPage() {
             availableTags={availableTags}
             handleCreateMeeting={handleCreateMeeting}
           />
-
-          <Box sx={{ p: 2 }}>
-            {meetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} numMeetings={numMeetings}/>
-            ))}
-          </Box>
+          {isSearching ? (
+            <p></p>
+          ) : (
+            <Box sx={{ p: 2 }}>
+              {filteredItems.map((meeting) => (
+                <MeetingCard
+                  key={meeting.id}
+                  meeting={meeting}
+                  numMeetings={numMeetings}
+                />
+              ))}
+            </Box>
+          )}
         </Box>
       </ThemeProvider>
     </RequireAuthToolBar>

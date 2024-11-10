@@ -131,3 +131,28 @@ export const getMeetingUsers = async (db: Database, meetingId: string) => {
   // Return the collection of user objects
   return users;
 };
+
+export const getMeetingObject = async (db: Database, userID: string) => {
+  // Reference to the 'meetingUsers' node in the database
+  const meetingUsersRef = ref(db, "meetingUsers");
+
+  // Query meetingUsers where 'meetingId' equals the specified meetingId
+  const meetingUsersQuery = query(
+    meetingUsersRef,
+    orderByChild("userId"),
+    equalTo(userID) 
+  );
+
+  // Get the snapshot of the query result
+  const meetingUsersSnapshot = await get(meetingUsersQuery);
+
+  const data = meetingUsersSnapshot.val() as MeetingUser;
+  console.log("Data: ", data);
+
+  if (!data) {
+    return [];
+  } 
+  const meetingIds = Object.values(data).map((meetingUser) => meetingUser.meetingId);
+  console.log("meetingIds: ", meetingIds);
+  return meetingIds;
+};

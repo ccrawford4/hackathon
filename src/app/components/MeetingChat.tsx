@@ -1,13 +1,12 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { IconButton, Avatar, Button, TextareaAutosize } from "@mui/material";
-import { Close, Chat, Mic, PanTool } from "@mui/icons-material";
+import { IconButton, Avatar, Button } from "@mui/material";
+import { Close } from "@mui/icons-material";
 import Link from "next/link";
-import { CustomUser, Member, Message } from "@/lib/API";
+import { CustomUser,  Message } from "@/lib/API";
 import { useRouter } from "next/navigation";
-import { FcEndCall } from "react-icons/fc";
 import { createObject, updateObject } from "@/lib/mutations";
-import { Database, ref, onValue, set, query, orderByChild, equalTo } from "firebase/database";
+import { Database, ref, onValue, query, orderByChild, equalTo } from "firebase/database";
 import { useTenantId, useUserId } from "../providers/AppContext";
 
 interface MeetingChatProps {
@@ -124,11 +123,6 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
 
     console.log("Updated Meeting: ", updateMeeting);
     router.push(`/meetings/${meetingId}`);
-  };
-
-  // Scroll to bottom whenever messages update
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {

@@ -5,8 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { CustomUser, Meeting, TagWithDetails } from "@/lib/API";
 import { getItem, listAll } from "@/lib/queries";
-import { useDatabase, useTenantId, useUserId } from "@/app/providers/AppContext";
-import { getMeetingTags } from "@/lib/helpers";
+import {
+  useDatabase,
+  useTenantId,
+  useUserId,
+} from "@/app/providers/AppContext";
+import { getMeetingTags, getMeetingUsers } from "@/lib/helpers";
 import Link from "next/link";
 import { ArrowBack, Edit } from "@mui/icons-material";
 
@@ -19,7 +23,6 @@ export default function MeetingDetail() {
   const [users, setUsers] = useState<CustomUser[]>([]);
   const tenantId = useTenantId();
   const router = useRouter();
-  const userId = useUserId();
 
   const onStart = () => {
     router.push(`/meetings/${id}/start`);
@@ -28,8 +31,7 @@ export default function MeetingDetail() {
   const loadMeetingDetails = useCallback(async () => {
     const meeting = await getItem(db, "meetings", id as string);
     const tags = await getMeetingTags(db, meeting.id);
-    const users = await listAll(db, "users", tenantId);
-
+    const users = await getMeetingUsers(db, meeting.id);
     setMeeting(meeting as Meeting);
     setTags(tags as TagWithDetails[]);
     setUsers(users as CustomUser[]);
@@ -38,6 +40,10 @@ export default function MeetingDetail() {
   useEffect(() => {
     loadMeetingDetails();
   }, [loadMeetingDetails]);
+
+  useEffect(() => {
+    console.log("USERS: ", users);
+  }, [users]);
 
   return (
     <div className="text-white p-6">
@@ -66,14 +72,18 @@ export default function MeetingDetail() {
           <p className="text-gray-400 mb-2">Invited members</p>
           <div className="flex items-center space-x-2">
             <AvatarGroup max={4}>
-              {users.map((user) => (
-                <Avatar
-                  key={user.id}
-                  src={user.data.profileURL} 
-                  alt={user.data.firstName + " " + user.data.lastName}
-                  className={"ring-2 ring-[#7000FF]"}
-                />
-              ))}
+              {users.map((user, index) => {
+                  console.log("user1: ", user); // Log each user object
+                  console.log("user")
+                  return (
+                    <Avatar
+                      key={index}
+                      src={user.data.profileURL}
+                      alt={user.data.firstName + " " + user.data.lastName}                     
+                      className={"ring-2 ring-[#7000FF]"}
+                    />
+                  );
+                })}
             </AvatarGroup>
           </div>
         </div>

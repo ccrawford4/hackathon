@@ -29,12 +29,12 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
     const [transcripts, setTranscripts] = useState<string[]>([]);
 
     useEffect(() => {
-        const ws = new WebSocket(`ws://localhost:8000/ws/meeting/test_meeting`);
+        const ws = new WebSocket(`ws://localhost:8000/ws/meeting/${meetingId}/`);
         setSocket(ws);
 
         ws.onopen = () => {
             console.log('WebSocket connection opened');
-            ws.send(JSON.stringify({ user_id: '1' }));
+            ws.send(JSON.stringify({ user_id: userId }));
             startRecording(ws);
         };
 
@@ -54,7 +54,10 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
                 if ("auth" in json) {
                     console.log('Authenticated:', json.auth);
                     return ;
-                } 
+                } else if ("error" in json) {
+                    console.error('Error:', json.error);
+                    return ;
+                }
                 const transcript = json;
                 setTranscripts([...transcripts, transcript]);
             } else {

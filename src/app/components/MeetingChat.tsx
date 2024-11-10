@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { IconButton, Avatar, Button } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import Link from "next/link";
@@ -25,95 +25,93 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
   db,
 }) => {
   const router = useRouter();
-  // const [socket, setSocket] = useState<WebSocket | null>(null);
-  // const userId = useUserId();
-
+  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef(null);
   const tenantId = useTenantId();
   const userId = useUserId();
-  //const [transcripts] = useState<string[]>([]);
+  const [transcripts, setTranscripts] = useState<string[]>([]);
 
-  // useEffect(() => {
-  //     const ws = new WebSocket(`ws://localhost:8000/ws/meeting/${meetingId}/`);
-  //     setSocket(ws);
+  useEffect(() => {
+    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_CHAT_WEB_SOCKET_URL}/ws/meeting/${meetingId}`);
+      setSocket(ws);
 
-  //     ws.onopen = () => {
-  //         console.log('WebSocket connection opened');
-  //         ws.send(JSON.stringify({ user_id: userId }));
-  //         startRecording(ws);
-  //     };
+      ws.onopen = () => {
+          console.log('WebSocket connection opened');
+          ws.send(JSON.stringify({ user_id: userId }));
+          startRecording(ws);
+      };
 
-  //     ws.onclose = () => {
-  //         console.log('WebSocket connection closed');
-  //     };
+      ws.onclose = () => {
+          console.log('WebSocket connection closed');
+      };
 
-  //     ws.onerror = (error) => {
-  //         console.log('WebSocket error:', error);
-  //         router.push('/');
-  //     };
+      ws.onerror = (error) => {
+          console.log('WebSocket error:', error);
+         // router.push('/');
+      };
 
-  //     ws.onmessage = async (event) => {
-  //         console.log('WebSocket message received:', event.data);
-  //         console.log('Type:', typeof event.data);
-  //         if (typeof event.data === 'string') {
-  //             const json = await JSON.parse(event.data);
-  //             if ("auth" in json) {
-  //                 console.log('Authenticated:', json.auth);
-  //                 return ;
-  //             } else if ("error" in json) {
-  //                 console.error('Error:', json.error);
-  //                 return ;
-  //             }
-  //             const transcript = json;
-  //             setTranscripts([...transcripts, transcript]);
-  //         } else {
-  //             const blob = new Blob([event.data], { type: 'audio/webm' });
-  //             const url = URL.createObjectURL(blob);
-  //             const audio = new Audio(url);
-  //             audio.play();
-  //         }
-  //     }
+      ws.onmessage = async (event) => {
+          console.log('WebSocket message received:', event.data);
+          console.log('Type:', typeof event.data);
+          if (typeof event.data === 'string') {
+              const json = await JSON.parse(event.data);
+              if ("auth" in json) {
+                  console.log('Authenticated:', json.auth);
+                  return ;
+              } else if ("error" in json) {
+                  console.error('Error:', json.error);
+                  return ;
+              }
+              const transcript = json;
+              setTranscripts([...transcripts, transcript]);
+          } else {
+              const blob = new Blob([event.data], { type: 'audio/webm' });
+              const url = URL.createObjectURL(blob);
+              const audio = new Audio(url);
+              audio.play();
+          }
+      }
 
-  //     return () => {
-  //         ws.close();
-  //     };
+      return () => {
+          ws.close();
+      };
 
-  //     // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [meetingId, transcripts]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meetingId, transcripts]);
 
-  // const startRecording = useCallback((socket: WebSocket) => {
+  const startRecording = useCallback((socket: WebSocket) => {
 
-  //     console.log('Starting recording...');
-  //     if (!socket) return;
+      console.log('Starting recording...');
+      if (!socket) return;
 
-  //     console.log('Starting recording...');
+      console.log('Starting recording...');
 
-  //     navigator.mediaDevices.getUserMedia({ audio: true })
-  //         .then((stream) => {
-  //             const mediaRecorder = new MediaRecorder(stream);
-  //             mediaRecorder.start(100);
+      navigator.mediaDevices.getUserMedia({ audio: true })
+          .then((stream) => {
+              const mediaRecorder = new MediaRecorder(stream);
+              mediaRecorder.start(100);
 
-  //             console.log('MediaRecorder started:', mediaRecorder.state);
+              console.log('MediaRecorder started:', mediaRecorder.state);
 
-  //             mediaRecorder.ondataavailable = (event) => {
-  //                 if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
-  //                     socket.send(event.data);
-  //                 }
-  //             };
+              mediaRecorder.ondataavailable = (event) => {
+                  if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                      socket.send(event.data);
+                  }
+              };
 
-  //             mediaRecorder.onstop = () => {
-  //                 stream.getTracks().forEach(track => track.stop());
-  //             };
-  //         })
-  //         .catch((error) => {
-  //             console.error('Error accessing microphone:', error);
-  //         });
+              mediaRecorder.onstop = () => {
+                  stream.getTracks().forEach(track => track.stop());
+              };
+          })
+          .catch((error) => {
+              console.error('Error accessing microphone:', error);
+          });
 
-  //         // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [socket]);
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
 
   const handleEndMeeting = async () => {
     console.log("End Meeting");

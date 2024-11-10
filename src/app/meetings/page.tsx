@@ -62,6 +62,7 @@ export default function LandingPage() {
         setLoading(false);
         return;
       }
+      console.log("RESULT: ", result);
       setMeetings(result.map((entry) => ({
         id: entry.id,
         data: entry.data as Meeting["data"],
@@ -295,8 +296,12 @@ export default function LandingPage() {
           />
 
           <Box sx={{ p: 2 }}>
-            {filteredMeetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} numMeetings={numMeetings}/>
+            {meetings.map((meeting) => (
+              <MeetingCard 
+                key={meeting.id} 
+                meeting={meeting} 
+                numMeetings={numMeetings}
+              />
             ))}
           </Box>
         </Box>

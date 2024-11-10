@@ -73,8 +73,6 @@ export default function MeetingDetail() {
           <div className="flex items-center space-x-2">
             <AvatarGroup max={4}>
               {users.map((user, index) => {
-                  console.log("user1: ", user); // Log each user object
-                  console.log("user")
                   return (
                     <Avatar
                       key={index}

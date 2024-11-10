@@ -7,6 +7,7 @@ import { Database } from "firebase/database";
 import { User } from "firebase/auth";
 import { getUser } from "@/lib/queries";
 import { createObject } from "@/lib/mutations";
+import { CustomUser } from "@/lib/API";
 
 interface AppContextType {
     loading: boolean;
@@ -16,6 +17,8 @@ interface AppContextType {
     database: Database;
     tenantId: string | null;
     setTenantId: (id: string | null) => void;
+    setUserId: (id: string | null) => void;
+    userId: string | null;
 }
 
 const AuthContext = createContext({} as AppContextType);
@@ -25,6 +28,7 @@ interface AuthProviderProps {
 }
 
 const TENANT_ID_KEY = 'app_tenant_id';
+const USER_ID_KEY = 'app_user_id';
 
 export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
@@ -36,6 +40,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         return null;
     });
+
+    const [userId, setUserIdState] = useState<string | null>(() => {
+        // Initialize tenantId from localStorage during component mount
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem(USER_ID_KEY);
+        }
+        return null;
+    });
+
+    const setUserId = (id: string | null) => {
+        setUserIdState(id)
+        if (typeof window !== 'undefined') {
+            if (id) {
+                localStorage.setItem(USER_ID_KEY, id);
+            } else {
+                localStorage.removeItem(USER_ID_KEY);
+            }
+        }
+    }
     
     // Wrapper function to update both state and localStorage
     const setTenantId = (id: string | null) => {
@@ -51,8 +74,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+            console.log("Firebase User: ", firebaseUser);
+            if (!firebaseUser) {
+                setUser(null);
+                setLoading(false);
+                return;
+            }
             setUser(firebaseUser);
             setLoading(false);
+
+            getUser(database, firebaseUser.email).then((userObject) => {
+                
+            })
         });
     
         return () => unsubscribe();
@@ -70,7 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const firstName = nameParts[0] || "";
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
-            const userObject = await getUser(database, email);
+            let userObject = await getUser(database, email);
             if (!userObject) {
                 await createObject(database, "users", {
                     data: {
@@ -80,7 +113,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         email: email,
                         profileURL: photoURL || "",
                     }
+                }).then((newUser) => {
+                    setUserId(newUser.id);
                 });
+                
+            } else {
+                setUserId(userObject.id);
             }
         } catch (error) {
             console.error("Error during Google sign-in:", error);
@@ -102,7 +140,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             logout, 
             database, 
             tenantId, 
-            setTenantId 
+            setTenantId,
+            setUserId,
+            userId,
         }}>
             {children}
         </AuthContext.Provider>
@@ -119,4 +159,8 @@ export function useDatabase() {
 
 export function useTenantId() {
     return useContext(AuthContext).tenantId;
+}
+
+export function useUserId() {
+    return useContext(AuthContext).userId;
 }

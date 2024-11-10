@@ -35,7 +35,7 @@ export const StatCard = ({
 
       {/* Heading and Description */}
       <div>
-        <div className="font-medium text-slate-400">{heading}</div>
+        <div className="font-medium text-slate-300">{heading}</div>
         <div className="text-slate-500 text-sm">{description}</div>
       </div>
     </div>

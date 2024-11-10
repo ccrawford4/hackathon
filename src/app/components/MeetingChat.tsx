@@ -3,7 +3,7 @@ import React from 'react';
 import { IconButton, Avatar } from '@mui/material';
 import { Close, Chat, Mic, PanTool } from '@mui/icons-material';
 import Link from 'next/link';
-import { Member } from './types';
+import { Member } from '@/lib/API';
 
 interface MeetingChatProps {
     title: string;
@@ -13,12 +13,14 @@ interface MeetingChatProps {
         text: string;
     }[];
     participants: Member[];
+    meetingId: string;
 }
 
 const MeetingChat: React.FC<MeetingChatProps> = ({
     title,
     messages,
     participants,
+    meetingId,
 }) => {
     return (
         <div className="text-white">
@@ -29,7 +31,7 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
                         <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
                             Live
                         </span>
-                        <Link href="/meeting/details">
+                        <Link href={`/meetings/${meetingId}`}>
                             <IconButton color="inherit">
                                 <Close />
                             </IconButton>

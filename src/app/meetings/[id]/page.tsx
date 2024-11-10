@@ -1,108 +1,96 @@
 "use client";
 
+import { Avatar, AvatarGroup, Button, IconButton } from "@mui/material";
+import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { CustomUser, Meeting, TagWithDetails } from "@/lib/API";
+import { getItem } from "@/lib/queries";
 import {
-    AppBar,
-    Box,
-    CssBaseline,
-    IconButton,
-    Typography,
-    Chip,
-    ThemeProvider,
-    createTheme,
-    Container,
-    Toolbar
-} from '@mui/material';
-import {
-    Search,
-    Settings,
-    AccountCircle,
-} from '@mui/icons-material';
-import { useParams } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
-import { Meeting, TagWithDetails } from '@/lib/API';
-import { getItem } from '@/lib/queries';
-import { useDatabase } from '@/app/providers/AppContext';
-import { getMeetingTags } from '@/lib/helpers';
-
-const darkTheme = createTheme({
-    palette: {
-        mode: 'dark',
-        background: {
-            default: '#121212',
-            paper: '#121212',
-        },
-    },
-});
+  useDatabase,
+} from "@/app/providers/AppContext";
+import { getMeetingTags, getMeetingUsers } from "@/lib/helpers";
+import Link from "next/link";
+import { ArrowBack, Edit } from "@mui/icons-material";
 
 export default function MeetingDetail() {
-    const params = useParams();
-    const db = useDatabase();
-    const id = params.id;
-   const [meeting, setMeeting] = useState<Meeting | null>(null);
-   const [tags, setTags] = useState<TagWithDetails[]>([]);
+  const params = useParams();
+  const db = useDatabase();
+  const id = params.id;
+  const [meeting, setMeeting] = useState<Meeting | null>(null);
+  const [, setTags] = useState<TagWithDetails[]>([]);
+  const [users, setUsers] = useState<CustomUser[]>([]);
+  const router = useRouter();
 
-    const loadMeetingDetails = useCallback(async () => {
-        const meeting = await getItem(db, 'meetings', id as string);
-        const tags = await getMeetingTags(db, meeting.id);
-        setMeeting(meeting as Meeting);
-        setTags(tags as TagWithDetails[]);
-    }, [db, id]);
+  const onStart = () => {
+    router.push(`/meetings/${id}/start`);
+  };
 
-    useEffect(() => {
-        loadMeetingDetails();
-    }, [loadMeetingDetails]);
+  const loadMeetingDetails = useCallback(async () => {
+    const meeting = await getItem(db, "meetings", id as string);
+    const tags = await getMeetingTags(db, meeting.id);
+    const users = await getMeetingUsers(db, meeting.id);
+    setMeeting(meeting as Meeting);
+    setTags(tags as TagWithDetails[]);
+    setUsers(users as CustomUser[]);
+  }, [db, id]);
 
+  useEffect(() => {
+    loadMeetingDetails();
+  }, [loadMeetingDetails]);
 
-    return (
-        <ThemeProvider theme={darkTheme}>
-            <CssBaseline />
-            <Box sx={{ flexGrow: 1, minHeight: '100vh', pb: 10, position: 'relative' }}>
-                <AppBar position="static" elevation={0} sx={{ backgroundColor: 'background.paper' }}>
-                    <Toolbar sx={{ justifyContent: 'flex-end' }}>
-                        <IconButton color="inherit" size="large">
-                            <Search />
-                        </IconButton>
-                        <IconButton color="inherit" size="large">
-                            <Settings />
-                        </IconButton>
-                        <IconButton color="inherit" size="large">
-                            <AccountCircle />
-                        </IconButton>
-                    </Toolbar>
-                </AppBar>
+  useEffect(() => {
+    console.log("USERS: ", users);
+  }, [users]);
 
-                <Container maxWidth="sm" sx={{ mt: 4 }}>
-                    <Typography variant="h4" gutterBottom>
-                        {meeting?.data.title}
-                    </Typography>
+  return (
+    <div className="text-white p-6">
+      <div className="flex justify-between items-center mb-8">
+        <Link href="/meetings">
+          <IconButton color="inherit">
+            <ArrowBack />
+          </IconButton>
+        </Link>
+        <h1 className="text-xl">Meeting details</h1>
+        <IconButton color="inherit">
+          <Edit />
+        </IconButton>
+      </div>
 
-                    {tags.map((tag) => {
-                        return (
-                            <Chip
-                                key={tag.id}
-                                label={tag.data.name}
-                                sx={{
-                                    backgroundColor: tag.data.color,
-                                    borderRadius: '16px',
-                                    mr: 1,
-                                    mb: 1
-                                }}
-                            />
-                        );
-                    })}
-
-                    <Typography
-                        variant="body1"
-                        sx={{
-                            whiteSpace: 'pre-wrap',
-                            lineHeight: 1.6,
-                            letterSpacing: '0.00938em',
-                        }}
-                    >
-                        {meeting?.data.summary}
-                    </Typography>
-                </Container>
-            </Box>
-        </ThemeProvider>
-    );
+      <div className="space-y-8">
+        <div>
+          <p className="text-gray-400 mb-2">Name</p>
+          <h2 className="text-3xl font-bold">{meeting?.data.title}</h2>
+        </div>
+        <div>
+          <p className="text-gray-400 mb-2">Date & Time</p>
+          <p className="text-xl">{new Date().toDateString()}</p>
+        </div>
+        <div>
+          <p className="text-gray-400 mb-2">Invited members</p>
+          <div className="flex items-center space-x-2">
+            <AvatarGroup max={4}>
+              {users.map((user, index) => {
+                  return (
+                    <Avatar
+                      key={index}
+                      src={user.data.profileURL}
+                      alt={user.data.firstName + " " + user.data.lastName}                     
+                      className={"ring-2 ring-[#7000FF]"}
+                    />
+                  );
+                })}
+            </AvatarGroup>
+          </div>
+        </div>
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={onStart}
+          className="bg-white text-black hover:bg-gray-100 py-4 rounded-lg"
+        >
+          Start
+        </Button>
+      </div>
+    </div>
+  );
 }

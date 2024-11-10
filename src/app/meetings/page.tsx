@@ -146,7 +146,7 @@ export default function LandingPage() {
       data: {
         tenantId: tenantId as string,
         title: meetingName,
-        startAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       },
     };
 

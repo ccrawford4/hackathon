@@ -22,6 +22,7 @@ export interface Meeting {
     summary?: string;
     tagLine?: string;
     startAt?: string;
+    createdAt?: string;
     endAt?: string;
     transcript?: string;
   };

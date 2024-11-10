@@ -6,7 +6,7 @@ import { Paper, Typography, Stack, Chip } from "@mui/material";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useDatabase } from "../providers/AppContext";
-import { format, isPast, isFuture, isAfter } from 'date-fns';
+import { format, isPast, isFuture, isAfter } from "date-fns";
 
 interface MeetingCardProps {
   meeting: Meeting;
@@ -36,26 +36,37 @@ export default function MeetingCard(props: MeetingCardProps) {
 
   const getMeetingStatus = () => {
     const now = new Date();
-    const startAt = new Date(meeting.data.startAt as string);
+    const createdAt = new Date(meeting.data.createdAt as string);
     const endAt = new Date(meeting.data.endAt as string);
 
-    if (isFuture(startAt)) {
+
+    if (!meeting.data.startAt) {
+      // If the meeting was recently created (within last 24 hours)
+      const isNew = now.getTime() - createdAt.getTime() < 24 * 60 * 60 * 1000;
+
+      if (isNew) {
+        return {
+          label: "Just Added",
+          color: "bg-purple-500/10 text-purple-500",
+          dotColor: "bg-purple-500",
+        };
+      }
       return {
-        label: 'Not Started',
-        color: 'bg-blue-500/10 text-blue-500',
-        dotColor: 'bg-blue-500'
+        label: "Upcoming",
+        color: "bg-blue-500/10 text-blue-500",
+        dotColor: "bg-blue-500",
       };
     } else if (isPast(endAt)) {
       return {
-        label: 'Ended',
-        color: 'bg-gray-500/10 text-gray-500',
-        dotColor: 'bg-gray-500'
+        label: "Ended",
+        color: "bg-gray-500/10 text-gray-500",
+        dotColor: "bg-gray-500",
       };
     } else {
       return {
-        label: 'In Progress',
-        color: 'bg-green-500/10 text-green-500',
-        dotColor: 'bg-green-500'
+        label: "In Progress",
+        color: "bg-green-500/10 text-green-500",
+        dotColor: "bg-green-500",
       };
     }
   };
@@ -90,43 +101,74 @@ export default function MeetingCard(props: MeetingCardProps) {
           </div>
         </div>
 
+        {meeting.data.startAt && (
+          <>
+            <div className="flex items-center gap-1.5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span>
+                {format(
+                  new Date(meeting.data.startAt as string),
+                  "MMM dd, yyyy"
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                {format(new Date(meeting.data.startAt as string), "HH:mm")}
+              </span>
+            </div>
+          </>
+        )}
         <div className="flex items-center gap-3 text-gray-400 text-sm mb-4">
-          <div className="flex items-center gap-1.5">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <span>
-              {format(new Date(meeting.data.startAt as string), "MMM dd, yyyy")}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>{format(new Date(meeting.data.startAt as string), "HH:mm")}</span>
-          </div>
+          {status.label === "Just Added" && (
+            <div className="flex items-center gap-1.5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                Created{" "}
+                {format(new Date(meeting.data.createdAt as string), "MMM dd")}
+              </span>
+            </div>
+          )}
         </div>
 
         <Stack direction="row" spacing={1} className="flex-wrap gap-1">

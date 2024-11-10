@@ -9,7 +9,7 @@ import { useDatabase } from "@/app/providers/AppContext";
 import { getMeetingTags, getMeetingUsers } from "@/lib/helpers";
 import Link from "next/link";
 import { ArrowBack, Delete, Edit } from "@mui/icons-material";
-import { deleteObject } from "@/lib/mutations";
+import { deleteObject, updateObject } from "@/lib/mutations";
 
 export default function MeetingDetail() {
   const params = useParams();
@@ -22,6 +22,9 @@ export default function MeetingDetail() {
   const [isMeetingOver, setIsMeetingOver] = useState(meeting?.data.endAt);
 
   const onStart = () => {
+    updateObject(db, "meetings", id as string, {
+      startAt: new Date().toISOString(),
+    })
     router.push(`/meetings/${id}/start`);
   };
 
@@ -176,7 +179,7 @@ export default function MeetingDetail() {
             onClick={onStart}
             className="bg-purple-400 text-black hover:bg-gray-100 py-4 rounded-lg"
           >
-            Start
+            {meeting?.data.startAt ? "Resume": "Start" }
           </Button>
         </div>
       )}

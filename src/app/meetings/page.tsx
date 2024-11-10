@@ -19,7 +19,7 @@ import { listAll } from "@/lib/queries";
 import { Meeting, QueryInput, Tag, CustomUser } from "@/lib/API";
 import MeetingCard from "../components/MeetingCard";
 import NewMeeting from "../components/NewMeeting";
-import { createObject, createObjects, deleteObject } from "@/lib/mutations";
+import { createObject, createObjects } from "@/lib/mutations";
 
 const darkTheme = createTheme({
   palette: {

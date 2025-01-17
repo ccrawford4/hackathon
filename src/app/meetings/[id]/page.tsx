@@ -104,10 +104,10 @@ export default function MeetingDetail() {
           </div>
 
           <div>
-            <p className="text-gray-400 mb-2">Tagline:</p>
-            <p className="list-disc list-inside space-y-1">
-             {meeting?.data.tagLine ? meeting.data.tagLine : "No tagline available"}
-            </p>
+            <p className="text-gray-400 mb-2">Key Talking Points</p>
+            <ul className="list-disc list-inside space-y-1">
+              {meeting.data.tagLine ? meeting.data.tagLine : "No key talking points"}
+            </ul>
           </div>
 
           <div>

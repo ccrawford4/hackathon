@@ -3,15 +3,22 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { IconButton, Avatar, Button } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import Link from "next/link";
-import { CustomUser,  Message } from "@/lib/API";
+import { CustomUser, Message } from "@/lib/API";
 import { useRouter } from "next/navigation";
 import { createObject, updateObject } from "@/lib/mutations";
-import { Database, ref, onValue, query, orderByChild, equalTo } from "firebase/database";
+import {
+  Database,
+  ref,
+  onValue,
+  query,
+  orderByChild,
+  equalTo,
+} from "firebase/database";
 import { useTenantId, useUserId } from "../providers/AppContext";
 
 interface MeetingChatProps {
   title: string;
-  messages: Message[]
+  messages: Message[];
   participants: CustomUser[];
   meetingId: string;
   db: Database;
@@ -25,7 +32,8 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
   db,
 }) => {
   const router = useRouter();
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  // const [messageSocket, setMessageSocket] = useState<WebSocket | null>(null);
+  // const [audioSocket, setAudioSocket] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -33,85 +41,147 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
   const tenantId = useTenantId();
   const userId = useUserId();
   const [transcripts, setTranscripts] = useState<string[]>([]);
+  const ctx = new AudioContext();
+  const kSampleRate = 44100;
 
   useEffect(() => {
-    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_CHAT_WEB_SOCKET_URL}/ws/meeting/${meetingId}`);
-      setSocket(ws);
+    const endpoint = `${process.env.NEXT_PUBLIC_CHAT_WEB_SOCKET_URL}/${meetingId}`;
+    console.log("Web Socket endpoint: ", endpoint);
 
-      ws.onopen = () => {
-          console.log('WebSocket connection opened');
-          ws.send(JSON.stringify({ user_id: userId }));
-          startRecording(ws);
-      };
+    const wsMessage = new WebSocket(`${endpoint}/messages`);
 
-      ws.onclose = () => {
-          console.log('WebSocket connection closed');
-      };
-
-      ws.onerror = (error) => {
-          console.log('WebSocket error:', error);
-         // router.push('/');
-      };
-
-      ws.onmessage = async (event) => {
-          console.log('WebSocket message received:', event.data);
-          console.log('Type:', typeof event.data);
-          if (typeof event.data === 'string') {
-              const json = await JSON.parse(event.data);
-              if ("auth" in json) {
-                  console.log('Authenticated:', json.auth);
-                  return ;
-              } else if ("error" in json) {
-                  console.error('Error:', json.error);
-                  return ;
-              }
-              const transcript = json;
-              setTranscripts([...transcripts, transcript]);
-          } else {
-              const blob = new Blob([event.data], { type: 'audio/webm' });
-              const url = URL.createObjectURL(blob);
-              const audio = new Audio(url);
-              audio.play();
-          }
+    wsMessage.onmessage = async (event) => {
+      try { 
+        console.log("Message event: ", event);
+        const resp = await JSON.parse(event.data);
+        console.log("JSON Message event: ", resp);
+      } catch (error) {
+        console.log("Errr in message data!: ", error);
+        return;
       }
+    }
+  //  setMessageSocket(wsMessage);
 
-      return () => {
-          ws.close();
-      };
+    const wsAudio = new WebSocket(`${endpoint}/audio`);
+    wsAudio.binaryType = "arraybuffer";
+    wsAudio.onmessage = async (event) => {
+      try { 
+        console.log("Message event: ", event);
+        const resp = await JSON.parse(event.data);
+        console.log("JSON Message event: ", resp);
+      } catch (error) {
+        console.log("Errr in message data!: ", error);
+        return;
+      }
+    }
+  //  setAudioSocket(wsAudio);
 
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Start the recordings
+    startRecording(wsMessage);
+
+    wsMessage.onopen = () => {
+      console.log("Message WebSocket connection opened");
+      wsMessage.send(JSON.stringify({ user_id: userId }));
+      startRecording(wsMessage);
+    };
+
+    wsAudio.onopen = () => {
+      console.log("Audio WebSocket connection opened");
+      wsAudio.send(JSON.stringify({ user_id: userId }));
+      startRecording(wsAudio);
+    };
+
+    wsMessage.onerror = (event: Event) => {
+      const error = event as ErrorEvent;
+      console.error("Message WebSocket error details:", {
+        message: error.message,
+        type: error.type,
+        error: error.error,
+        filename: error.filename,
+        lineno: error.lineno,
+        colno: error.colno,
+        timeStamp: error.timeStamp,
+      });
+    };
+
+    wsAudio.onerror = (event: Event) => {
+      const error = event as ErrorEvent;
+      console.error("Audio WebSocket error details:", {
+        message: error.message,
+        type: error.type,
+        error: error.error,
+        filename: error.filename,
+        lineno: error.lineno,
+        colno: error.colno,
+        timeStamp: error.timeStamp,
+      });
+    };
+
+    wsAudio.onmessage = async (event) => {
+      try {
+        console.log("Audio WebSocket message received:", event.data);
+        
+        if (event.data instanceof ArrayBuffer) {
+          const audioData = new Float32Array(event.data);
+          const buffer = ctx.createBuffer(1, audioData.length, kSampleRate);
+          const buf = buffer.getChannelData(0);
+
+          buf.set(audioData);
+
+          const node = ctx.createBufferSource();
+          node.buffer = buffer;
+          node.connect(ctx.destination);
+          node.start(0);
+        } else {
+          console.log("Message is not an array buffer");
+        }
+      } catch (error) {
+        console.error("Error processing Audio message:", error);
+      }
+    };
+
+    wsMessage.onmessage = async (event) => {
+      console.log("Message received from wsMessage: ", event.data);
+      setTranscripts([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meetingId, transcripts]);
 
-  const startRecording = useCallback((socket: WebSocket) => {
-
-      console.log('Starting recording...');
+  const startRecording = useCallback(
+    (socket: WebSocket) => {
+      console.log("Starting recording...");
       if (!socket) return;
 
-      console.log('Starting recording...');
+      console.log("Starting recording...");
 
-      navigator.mediaDevices.getUserMedia({ audio: true })
-          .then((stream) => {
-              const mediaRecorder = new MediaRecorder(stream);
-              mediaRecorder.start(100);
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start(100);
 
-              console.log('MediaRecorder started:', mediaRecorder.state);
+          console.log("MediaRecorder started:", mediaRecorder.state);
 
-              mediaRecorder.ondataavailable = (event) => {
-                  if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
-                      socket.send(event.data);
-                  }
-              };
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+              console.log("sending event.data: ", event.data);
+              socket.send(event.data);
+            }
+          };
 
-              mediaRecorder.onstop = () => {
-                  stream.getTracks().forEach(track => track.stop());
-              };
-          })
-          .catch((error) => {
-              console.error('Error accessing microphone:', error);
-          });
+          mediaRecorder.onstop = () => {
+            stream.getTracks().forEach((track) => track.stop());
+          };
+        })
+        .catch((error) => {
+          console.error("Error accessing microphone:", error);
+        });
 
-          // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    []
+  );
 
   const handleEndMeeting = async () => {
     console.log("End Meeting");
@@ -125,10 +195,14 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
 
   useEffect(() => {
     // Reference to all messages in the database
-    const messagesRef = ref(db, 'messages');
+    const messagesRef = ref(db, "messages");
 
     // Query the messages where 'meetingId' matches the specified meetingId
-    const messagesQuery = query(messagesRef, orderByChild('meetingId'), equalTo(meetingId));
+    const messagesQuery = query(
+      messagesRef,
+      orderByChild("meetingId"),
+      equalTo(meetingId)
+    );
 
     // Subscribe to real-time updates
     const unsubscribe = onValue(messagesQuery, (snapshot) => {
@@ -143,7 +217,9 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
         // Append new messages to the existing list (avoiding full reset)
         setMessages((prevMessages) => {
           const messageIds = prevMessages.map((msg) => msg.id);
-          const newMessages = (messagesList as Message[]).filter((msg) => !messageIds.includes(msg.id));
+          const newMessages = (messagesList as Message[]).filter(
+            (msg) => !messageIds.includes(msg.id)
+          );
           return [...prevMessages, ...newMessages];
         });
       } else {
@@ -158,7 +234,6 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
     };
   }, [meetingId]); // Dependency array ensures effect runs when meetingId changes
 
-
   // Send message handler
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -169,8 +244,8 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
         senderId: userId,
         meetingId: meetingId,
         tenantId: tenantId,
-      }
-    })
+      },
+    });
     console.log("Response: ", response);
 
     setNewMessage("");
@@ -216,7 +291,9 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
       >
         {messages.map((message) => {
           const messageObject = message as Message;
-          const sender = getMessageSender(messageObject.data.senderId) as CustomUser;
+          const sender = getMessageSender(
+            messageObject.data.senderId
+          ) as CustomUser;
           const isCurrentUser = messageObject.data.senderId === userId;
 
           return (
@@ -226,11 +303,18 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
                 isCurrentUser ? "flex-row-reverse space-x-reverse" : ""
               }`}
             >
-              <Avatar src={sender.data ? sender.data.profileURL : ""} className="w-8 h-8" />
+              <Avatar
+                src={sender.data ? sender.data.profileURL : ""}
+                className="w-8 h-8"
+              />
               <div
                 className={`max-w-[70%] ${isCurrentUser ? "text-right" : ""}`}
               >
-                <p className="text-sm text-gray-300 mb-1">{sender.data ? (sender.data.firstName + " " + sender.data.lastName) : "Unkown User"}</p>
+                <p className="text-sm text-gray-300 mb-1">
+                  {sender.data
+                    ? sender.data.firstName + " " + sender.data.lastName
+                    : "Unkown User"}
+                </p>
                 <div
                   className={`rounded-lg p-3 ${
                     isCurrentUser ? "bg-blue-600" : "bg-gray-700"
@@ -275,7 +359,9 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
               className="flex flex-col items-center space-y-1"
             >
               <Avatar src={participant.data.profileURL} className="w-10 h-10" />
-              <p className="text-sm whitespace-nowrap">{participant.data.firstName}</p>
+              <p className="text-sm whitespace-nowrap">
+                {participant.data.firstName}
+              </p>
             </div>
           ))}
         </div>

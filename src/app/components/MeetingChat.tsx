@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { IconButton, Avatar, Button } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import Link from "next/link";
@@ -26,162 +26,127 @@ interface MeetingChatProps {
 
 const MeetingChat: React.FC<MeetingChatProps> = ({
   title,
-  //messages,
   participants,
   meetingId,
   db,
 }) => {
   const router = useRouter();
-  // const [messageSocket, setMessageSocket] = useState<WebSocket | null>(null);
-  // const [audioSocket, setAudioSocket] = useState<WebSocket | null>(null);
+  const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
+  const [audioSocket, setAudioSocket] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const tenantId = useTenantId();
   const userId = useUserId();
-  const [transcripts, setTranscripts] = useState<string[]>([]);
-  const ctx = new AudioContext();
-  const kSampleRate = 44100;
+  const mediaSource = new MediaSource();
 
-  useEffect(() => {
-    const endpoint = `${process.env.NEXT_PUBLIC_CHAT_WEB_SOCKET_URL}/${meetingId}`;
-    console.log("Web Socket endpoint: ", endpoint);
+  const audioElement = document.createElement("audio");
+  audioElement.autoplay = true;
+  audioElement.controls = true;
+  audioElement.src = URL.createObjectURL(mediaSource);
 
-    const wsMessage = new WebSocket(`${endpoint}/messages`);
+  document.body.appendChild(audioElement);
 
-    wsMessage.onmessage = async (event) => {
-      try { 
-        console.log("Message event: ", event);
-        const resp = await JSON.parse(event.data);
-        console.log("JSON Message event: ", resp);
-      } catch (error) {
-        console.log("Errr in message data!: ", error);
-        return;
-      }
-    }
-  //  setMessageSocket(wsMessage);
+  let sourceBuffer: SourceBuffer | null = null;
+  const bufferQueue: BufferSource[] = [];
+  mediaSource.addEventListener("sourceopen", () => {
+    try {
+      sourceBuffer = mediaSource.addSourceBuffer("audio/webm; codecs=opus");
+      sourceBuffer.mode = "sequence";
 
-    const wsAudio = new WebSocket(`${endpoint}/audio`);
-    wsAudio.binaryType = "arraybuffer";
-    wsAudio.onmessage = async (event) => {
-      try { 
-        console.log("Message event: ", event);
-        const resp = await JSON.parse(event.data);
-        console.log("JSON Message event: ", resp);
-      } catch (error) {
-        console.log("Errr in message data!: ", error);
-        return;
-      }
-    }
-  //  setAudioSocket(wsAudio);
-
-
-    // Start the recordings
-    startRecording(wsMessage);
-
-    wsMessage.onopen = () => {
-      console.log("Message WebSocket connection opened");
-      wsMessage.send(JSON.stringify({ user_id: userId }));
-      startRecording(wsMessage);
-    };
-
-    wsAudio.onopen = () => {
-      console.log("Audio WebSocket connection opened");
-      wsAudio.send(JSON.stringify({ user_id: userId }));
-      startRecording(wsAudio);
-    };
-
-    wsMessage.onerror = (event: Event) => {
-      const error = event as ErrorEvent;
-      console.error("Message WebSocket error details:", {
-        message: error.message,
-        type: error.type,
-        error: error.error,
-        filename: error.filename,
-        lineno: error.lineno,
-        colno: error.colno,
-        timeStamp: error.timeStamp,
-      });
-    };
-
-    wsAudio.onerror = (event: Event) => {
-      const error = event as ErrorEvent;
-      console.error("Audio WebSocket error details:", {
-        message: error.message,
-        type: error.type,
-        error: error.error,
-        filename: error.filename,
-        lineno: error.lineno,
-        colno: error.colno,
-        timeStamp: error.timeStamp,
-      });
-    };
-
-    wsAudio.onmessage = async (event) => {
-      try {
-        console.log("Audio WebSocket message received:", event.data);
-        
-        if (event.data instanceof ArrayBuffer) {
-          const audioData = new Float32Array(event.data);
-          const buffer = ctx.createBuffer(1, audioData.length, kSampleRate);
-          const buf = buffer.getChannelData(0);
-
-          buf.set(audioData);
-
-          const node = ctx.createBufferSource();
-          node.buffer = buffer;
-          node.connect(ctx.destination);
-          node.start(0);
-        } else {
-          console.log("Message is not an array buffer");
+      sourceBuffer.addEventListener("updateend", () => {
+        if (bufferQueue.length > 0 && !sourceBuffer?.updating) {
+          const chunk = bufferQueue.shift();
+          if (chunk) {
+            sourceBuffer?.appendBuffer(chunk);
+          }
         }
-      } catch (error) {
-        console.error("Error processing Audio message:", error);
-      }
-    };
-
-    wsMessage.onmessage = async (event) => {
-      console.log("Message received from wsMessage: ", event.data);
-      setTranscripts([]);
+      });
+    } catch (error) {
+      console.error("Error creating source buffer:", error);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meetingId, transcripts]);
+  });
 
-  const startRecording = useCallback(
-    (socket: WebSocket) => {
-      console.log("Starting recording...");
-      if (!socket) return;
+  const [isRecording, setIsRecording] = useState(false);
 
-      console.log("Starting recording...");
+  const startRecording = () => {
+    try {
+      const endpoint = `${process.env.NEXT_PUBLIC_CHAT_WEB_SOCKET_URL}/${meetingId}`;
+      console.log("Web Socket endpoint: ", endpoint);
 
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          const mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.start(100);
+      // const wsMessage = new WebSocket(`${endpoint}/messages`);
+      const wsAudio = new WebSocket(`${endpoint}/audio`);
+      wsAudio.binaryType = "arraybuffer";
 
-          console.log("MediaRecorder started:", mediaRecorder.state);
+      wsAudio.onopen = () => {
+        console.log("Audio Connection opened.");
+        wsAudio.send(JSON.stringify({ user_id: userId }));
+      };
+      wsAudio.onerror = (event: Event) => {
+        const error = event as ErrorEvent;
+        console.error("Audio WebSocket error:", error.message);
+      };
+      wsAudio.onclose = (event: CloseEvent) => {
+        console.log("Audio WebSocket closed:", event.reason);
+      };
 
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
-              console.log("sending event.data: ", event.data);
-              socket.send(event.data);
+      wsAudio.onmessage = async (event) => {
+        if (event.data instanceof ArrayBuffer) {
+          // Queue buffers if sourceBuffer isn't ready yet
+          if (!sourceBuffer || mediaSource.readyState !== "open") {
+            console.log("Buffering audio data...");
+            bufferQueue.push(event.data);
+            return;
+          }
+
+          // Append buffer or queue if busy
+          if (sourceBuffer.updating) {
+            bufferQueue.push(event.data);
+          } else {
+            try {
+              sourceBuffer.appendBuffer(event.data);
+            } catch (error) {
+              console.error("Error appending buffer:", error);
             }
-          };
+          }
+        }
+      };
 
-          mediaRecorder.onstop = () => {
-            stream.getTracks().forEach((track) => track.stop());
-          };
-        })
-        .catch((error) => {
-          console.error("Error accessing microphone:", error);
-        });
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (event) => {
+          console.log("Audio data available:", event.data);
+          wsAudio.send(event.data);
+          console.log("data availabl: ", event.data);
+        };
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach((track) => track.stop());
+        };
+        mediaRecorder.start(1);
+        setRecorder(mediaRecorder);
+      });
 
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    },
-    []
-  );
+      setAudioSocket(wsAudio);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+  const stopRecording = () => {
+    setIsRecording(false);
+    console.log("Closing web socket...");
+    audioSocket?.close();
+    recorder?.stop();
+  };
+
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    startRecording();
+  };
+
+  const handleStopRecording = () => {
+    stopRecording();
+  };
 
   const handleEndMeeting = async () => {
     console.log("End Meeting");
@@ -267,6 +232,28 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{title}</h1>
           <div className="flex items-center space-x-2">
+            <Button
+              onClick={handleStartRecording}
+              disabled={isRecording}
+              className={`px-4 py-2 rounded-full font-semibold ${
+                isRecording
+                  ? "bg-gray-500 cursor-not-allowed"
+                  : "bg-green-500 hover:bg-green-600"
+              }`}
+            >
+              Start Recording
+            </Button>
+            <Button
+              onClick={handleStopRecording}
+              disabled={!isRecording}
+              className={`px-4 py-2 rounded-full font-semibold ${
+                !isRecording
+                  ? "bg-gray-500 cursor-not-allowed"
+                  : "bg-red-500 hover:bg-red-600"
+              }`}
+            >
+              Stop Recording
+            </Button>
             <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
               Live
             </span>

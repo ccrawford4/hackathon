@@ -9,10 +9,10 @@ import { createObject, updateObject } from "@/lib/mutations";
 import {
   Database,
   ref,
-  onValue,
   query,
   orderByChild,
   equalTo,
+  onValue,
 } from "firebase/database";
 import { useTenantId, useUserId } from "../providers/AppContext";
 import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
@@ -48,8 +48,6 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
   audioElement.controls = true;
   audioElement.src = URL.createObjectURL(mediaSource);
 
-  // document.body.appendChild(audioElement);
-
   let sourceBuffer: SourceBuffer | null = null;
   const bufferQueue: BufferSource[] = [];
   mediaSource.addEventListener("sourceopen", () => {
@@ -83,19 +81,10 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
       if (userStillTalking()) {
         console.log("User is still talking. Update message content...");
         const lastMessage = messages[messages.length - 1];
-        const updatedMessage = {
-          ...lastMessage,
-          data: {
-            ...lastMessage.data,
-            content: lastMessage.data.content + ", " + transcript,
-          },
-        };
+        lastMessage.data.content += transcript;
 
-        const updatedMessages = messages.map((msg) =>
-          msg.id === lastMessage.id ? updatedMessage : msg
-        );
-        setMessages(updatedMessages);
-        updateObject(db, "messages", lastMessage.id, updatedMessage);
+        console.log("Updated message: ", lastMessage);
+        updateObject(db, "messages", lastMessage.id, lastMessage.data);
       } else {
         console.log("User started talking again. Create new message...");
         // Otherwise create a new message
@@ -111,10 +100,6 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
           data: updatedMessage,
         });
         console.log("Response: ", response);
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { id: response.id, data: updatedMessage },
-        ]);
       }
     } catch (error) {
       console.error("Error updating chat:", error);
@@ -166,7 +151,11 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
         }
       };
 
-      const dgConnection = deepgram.listen.live({ model: "nova" });
+      const dgConnection = deepgram.listen.live({
+        language: "en-US",
+        model: "nova",
+        punctuate: true,
+      });
       dgConnection.on(LiveTranscriptionEvents.Open, (data) => {
         console.log("Deepgram connection opened: ", data);
       });
@@ -186,12 +175,15 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
 
       navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
         const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: "audio/webm; codecs=opus",
+          mimeType: "audio/webm;codecs=opus",
         });
-        // const mediaRecorder = new MediaRecorder(stream);
 
-        mediaRecorder.ondataavailable = (event) => {
+        mediaRecorder.ondataavailable = async (event) => {
           console.log("Audio data available: ", event.data);
+          if (wsAudio.readyState !== WebSocket.OPEN) {
+            console.log("Audio WebSocket not open. Skipping...");
+            return;
+          }
           wsAudio.send(event.data);
           dgConnection.send(event.data);
         };
@@ -247,6 +239,7 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
     // Subscribe to real-time updates
     const unsubscribe = onValue(messagesQuery, (snapshot) => {
       const messagesData = snapshot.val();
+      console.log("Messages Data: ", messagesData);
       if (messagesData) {
         // Convert the messages data to an array of objects with id and data
         const messagesList = Object.entries(messagesData).map(([id, data]) => ({
@@ -254,13 +247,25 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
           data,
         }));
 
-        // Append new messages to the existing list (avoiding full reset)
         setMessages((prevMessages) => {
-          const messageIds = prevMessages.map((msg) => msg.id);
-          const newMessages = (messagesList as Message[]).filter(
-            (msg) => !messageIds.includes(msg.id)
-          );
-          return [...prevMessages, ...newMessages];
+          const messageMap = new Map(prevMessages.map((msg) => [msg.id, msg]));
+          (messagesList as Message[]).forEach((msg) => {
+            if (messageMap.has(msg.id)) {
+              // Update the content if the message already exists
+              const existingMessage = messageMap.get(msg.id);
+              if (
+                existingMessage &&
+                existingMessage.data.content !== msg.data.content
+              ) {
+                existingMessage.data.content = msg.data.content;
+              }
+            } else {
+              // Add new messages
+              messageMap.set(msg.id, msg);
+            }
+          });
+
+          return Array.from(messageMap.values());
         });
       } else {
         // If no messages for this meetingId, clear the list

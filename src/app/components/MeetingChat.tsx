@@ -15,6 +15,7 @@ import {
   equalTo,
 } from "firebase/database";
 import { useTenantId, useUserId } from "../providers/AppContext";
+import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 
 interface MeetingChatProps {
   title: string;
@@ -40,13 +41,14 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
   const tenantId = useTenantId();
   const userId = useUserId();
   const mediaSource = new MediaSource();
+  const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
 
   const audioElement = document.createElement("audio");
   audioElement.autoplay = true;
   audioElement.controls = true;
   audioElement.src = URL.createObjectURL(mediaSource);
 
-  document.body.appendChild(audioElement);
+  // document.body.appendChild(audioElement);
 
   let sourceBuffer: SourceBuffer | null = null;
   const bufferQueue: BufferSource[] = [];
@@ -67,6 +69,57 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
       console.error("Error creating source buffer:", error);
     }
   });
+
+  const userStillTalking = () => {
+    const messagesLength = messages.length;
+    return (
+      messagesLength > 0 &&
+      messages[messagesLength - 1].data.senderId === userId
+    );
+  };
+
+  async function handleUpdateChat(transcript: string) {
+    try {
+      if (userStillTalking()) {
+        console.log("User is still talking. Update message content...");
+        const lastMessage = messages[messages.length - 1];
+        const updatedMessage = {
+          ...lastMessage,
+          data: {
+            ...lastMessage.data,
+            content: lastMessage.data.content + ", " + transcript,
+          },
+        };
+
+        const updatedMessages = messages.map((msg) =>
+          msg.id === lastMessage.id ? updatedMessage : msg
+        );
+        setMessages(updatedMessages);
+        updateObject(db, "messages", lastMessage.id, updatedMessage);
+      } else {
+        console.log("User started talking again. Create new message...");
+        // Otherwise create a new message
+        const updatedMessage: Message["data"] = {
+          content: transcript,
+          createdAt: new Date().toISOString(),
+          senderId: userId as string,
+          meetingId: meetingId,
+          tenantId: tenantId as string,
+        };
+
+        const response = await createObject(db, "messages", {
+          data: updatedMessage,
+        });
+        console.log("Response: ", response);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { id: response.id, data: updatedMessage },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error updating chat:", error);
+    }
+  }
 
   const [isRecording, setIsRecording] = useState(false);
 
@@ -113,12 +166,34 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
         }
       };
 
+      const dgConnection = deepgram.listen.live({ model: "nova" });
+      dgConnection.on(LiveTranscriptionEvents.Open, (data) => {
+        console.log("Deepgram connection opened: ", data);
+      });
+
+      dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
+        console.log("Deepgram Transcript data: ", data);
+        const transcript = data.channel.alternatives[0].transcript;
+        console.log("Transcript: ", transcript);
+        if (transcript.length !== 0) {
+          handleUpdateChat(transcript);
+        }
+      });
+
+      dgConnection.on(LiveTranscriptionEvents.Error, (error) => {
+        console.error("Deepgram error:", error);
+      });
+
       navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        const mediaRecorder = new MediaRecorder(stream);
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType: "audio/webm; codecs=opus",
+        });
+        // const mediaRecorder = new MediaRecorder(stream);
+
         mediaRecorder.ondataavailable = (event) => {
-          console.log("Audio data available:", event.data);
+          console.log("Audio data available: ", event.data);
           wsAudio.send(event.data);
-          console.log("data availabl: ", event.data);
+          dgConnection.send(event.data);
         };
         mediaRecorder.onstop = () => {
           stream.getTracks().forEach((track) => track.stop());

@@ -155,6 +155,7 @@ const MeetingChat: React.FC<MeetingChatProps> = ({
         language: "en-US",
         model: "nova",
         punctuate: true,
+        keepAlive: true,
       });
       dgConnection.on(LiveTranscriptionEvents.Open, (data) => {
         console.log("Deepgram connection opened: ", data);

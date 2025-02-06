@@ -12,12 +12,22 @@ import {
   Upload,
   Globe,
   FileText,
+  MenuIcon,
 } from "lucide-react";
+import { useTheme } from "../providers/ThemeContext";
 
 export default function SideBar() {
+  const { toggleSidebar } = useTheme();
     return (
         <div className="w-64 bg-white border-r">
-
+          <div className="pl-4 pt-2">
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-lg hover:bg-gray-100"
+          >
+            <MenuIcon className="h-6 w-6 text-gray-600" />
+          </button>
+          </div>
             {/* Sidebar Navigation */}
             <nav className="p-4">
               <div className="mb-4">

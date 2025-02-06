@@ -1,42 +1,23 @@
-import React from 'react';
+import React from "react";
 
 interface StatCardProps {
-    icon: React.ComponentType;
-    number: number;
-    heading: string;
-    description: string;
-    onClick: () => void;
-};
+  icon: React.ComponentType;
+  number: number;
+  heading: string;
+  description: string;
+  onClick: () => void;
+}
 
-export const StatCard = ({ 
-  icon: Icon, 
-  number, 
-  heading, 
-  description, 
-  onClick,
-}: StatCardProps) => {
+export default function StatCard({ icon: Icon, number, heading, description, onClick }: StatCardProps) {
   return (
-    <div 
+    <div
       onClick={onClick}
-      className="bg-zinc-900 p-4 rounded-xl relative cursor-pointer w-48"
+      className="bg-black rounded-xl p-6 cursor-pointer transition-all hover:bg-black/90 hover:scale-[1.02]"
     >
-      {/* Icon */}
-      <div className="mb-4">
-        <div className="text-2xl text-white"> 
-          {<Icon/>}
-        </div>
-      </div>
-
-      {/* Number */}
-      <div className="text-3xl font-semibold mb-1">
-        {number}
-      </div>
-
-      {/* Heading and Description */}
-      <div>
-        <div className="font-medium text-slate-300">{heading}</div>
-        <div className="text-slate-500 text-sm">{description}</div>
-      </div>
+      <Icon /* className="text-white mb-4 text-xl"*/ />
+      <div className="text-4xl font-medium text-white mb-2">{number}</div>
+      <div className="text-white mb-1">{heading}</div>
+      <div className="text-gray-500 text-sm">{description}</div>
     </div>
   );
-};
+}

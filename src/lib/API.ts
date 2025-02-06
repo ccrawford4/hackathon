@@ -91,3 +91,11 @@ export interface Message {
     tenantId: string;
   }
 }
+
+export interface TenantUser {
+  id: string;
+  data: {
+    tenantId: string;
+    userId: string;
+  }
+}

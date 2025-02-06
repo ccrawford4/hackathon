@@ -6,7 +6,7 @@ import {
   orderByChild,
   equalTo,
 } from "firebase/database";
-import { CustomUser, QueryResult } from "./API";
+import { CustomUser, QueryResult, Tenant } from "./API";
 
 export async function listAll(
   db: Database,
@@ -41,15 +41,36 @@ export async function listAll(
   }
 }
 
+export async function getTenantFromId(
+  db: Database,
+  id: string
+): Promise<Tenant | null> {
+  const tenantRef = ref(db, `tenants/${id}`);
+  const tenantSnapshot = await get(tenantRef);
+  const data = tenantSnapshot.val();
+
+  if (!data) {
+    return null;
+  }
+
+  return { id, data: data as Tenant["data"] };
+}
+
 export async function getTenant(
   db: Database,
   name: string
-): Promise<{ id: string; data: unknown } | null> {
+): Promise<Tenant | null> {
   const tenantRef = ref(db, "tenants");
+  console.log("tenantRef: ", tenantRef);
+  console.log("name: ", name);
   const tenantQuery = query(tenantRef, orderByChild("name"), equalTo(name));
+  console.log("tenantQuery: ", tenantQuery);
 
   const tenantSnapshot = await get(tenantQuery);
+  console.log("tenantSnapshot: ", tenantSnapshot);
   const data = tenantSnapshot.val();
+
+  console.log("data: ", data);
 
   // If no data is found, return null
   if (!data) {
@@ -58,8 +79,7 @@ export async function getTenant(
 
   // Extract the first entry (since equalTo will match only one tenant)
   const [id, tenantData] = Object.entries(data)[0];
-
-  return { id, data: tenantData };
+  return { id, data: tenantData as Tenant["data"] };
 }
 
 export async function getItem(

@@ -58,6 +58,7 @@ export interface CustomUser {
     lastName?: string;
     email?: string;
     profileURL?: string;
+    createdAt?: string;
   };
 }
 

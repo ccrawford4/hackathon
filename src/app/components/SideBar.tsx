@@ -11,7 +11,7 @@ export default function SideBar() {
   const sectionClassName = (activePath: string) => {
     return `
       flex items-center w-full px-2 py-2 
-      text-${path === activePath ? "black": "gray-700"} 
+      text-${path === activePath ? "black": "gray-500"} 
       rounded-lg hover:bg-gray-100
       font-${path === activePath ? "bold": "normal"}
     `;

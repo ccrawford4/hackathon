@@ -73,12 +73,8 @@ export default function Users() {
                   <input type="checkbox" className="rounded" />
                 </th>
                 <th className="p-4 text-left font-medium text-gray-600">
-                  User name
+                  Users
                 </th>
-                <th className="p-4 text-left font-medium text-gray-600">
-                  Date added
-                </th>
-                <th className="p-4 w-8"></th>
               </tr>
             </thead>
             <tbody>

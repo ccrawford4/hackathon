@@ -59,7 +59,7 @@ export default function SideBar() {
               </button>
             </li>
             <li>
-            <button className={sectionClassName("/users")} onClick={() => handleSectionClick("/meetings")}>
+            <button className={sectionClassName("/meetings")} onClick={() => handleSectionClick("/meetings")}>
                 <Calendar className="w-5 h-5 mr-3" />
                 <span>Meetings</span>
               </button>

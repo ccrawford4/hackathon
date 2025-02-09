@@ -132,13 +132,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           ...userObject.data,
           firstName: userObject.data.firstName || firstName,
           lastName: userObject.data.lastName || lastName,
-          photoURL: userObject.data.profileURL || photoURL,
+          profileURL: userObject.data.profileURL || photoURL,
         };
         await updateObject(database, "users", userObject.id, updatedUser);
       }
 
       return Promise.resolve(userObject);
     } catch (error) {
+      await logout();
       console.error("Error during Google sign-in:", error);
       return Promise.reject(error);
     }

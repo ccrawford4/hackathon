@@ -19,7 +19,7 @@ import { darkTheme } from "@/app/theme/darkTheme";
 import { QueryInput } from "@/lib/API";
 
 export default function SignIn() {
-  const { user, signInWithGoogle, setTenantId } = useAuth();
+  const { user, signInWithGoogle, setTenantId, logout } = useAuth();
   const router = useRouter();
   const db = useDatabase();
 
@@ -66,6 +66,8 @@ export default function SignIn() {
     } catch (error) {
       console.error("Error during Google sign-in: ", error);
       setErrorMessage("Error during Google sign-in. Please try again.");
+      logout();
+      window.alert("Error! This user has not been added to the organization. Redirecting to login page...");
     }
   };
 

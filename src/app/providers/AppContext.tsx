@@ -119,7 +119,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         );
       }
 
-      console.log("userObject: ", userObject);
       setUserId(userObject.id);
 
       // If the user's first name, last name, or photo URL is empty, then update the user object

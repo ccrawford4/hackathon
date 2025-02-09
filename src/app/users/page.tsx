@@ -203,7 +203,7 @@ export default function Users() {
               <tr className="border-b text-sm">
                 <th className="p-4 text-left w-8">
                   <input
-                    onClick={() => {
+                    onChange={() => {
                       if (selectedUsers.length === users.length) {
                         setSelectedUsers([]);
                       } else {
@@ -230,7 +230,7 @@ export default function Users() {
                           (findUser) => findUser.id === user.id
                         ).length > 0
                       }
-                      onClick={() => handleCheckUser(user)}
+                      onChange={() => handleCheckUser(user)}
                       type="checkbox"
                       className="rounded"
                     />

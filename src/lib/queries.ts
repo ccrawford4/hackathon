@@ -99,10 +99,14 @@ export async function getItem(
 }
 export async function getUser(
   db: Database,
-  email: string | null
+  email: string | null,
+  tenantId: string | null
 ): Promise<CustomUser> {
   if (!email) {
     throw new Error("Email must be provided.");
+  }
+  if (!tenantId) {
+    throw new Error("Tenant ID must be provided.");
   }
 
   const userRef = ref(db, "users");
@@ -121,12 +125,19 @@ export async function getUser(
 
     // Check if entries exist and return the first one
     if (entries.length === 0) {
-      return { id: "", data: {} };
+      throw new Error("No users found with that email.");
     }
 
-    const [id, userData] = entries[0];
+    const matchingEntry = entries.find(([, userData]) => 
+      (userData as CustomUser["data"]).tenantId === tenantId
+    );
 
-    const userDataTyped = userData as CustomUser["data"]; // Type assertion
+    if (!matchingEntry) {
+      throw new Error("No users found with that email for the tenant.");
+    }
+
+    const [id, userData] = matchingEntry;
+    const userDataTyped = userData as CustomUser["data"];
 
     // Map userData to the correct structure
     const user: CustomUser = {

@@ -56,10 +56,16 @@ export default function SignIn() {
   };
 
   const handleSignInFlow = async () => {
-    if (tenantValidated) {
-      signInWithGoogle();
-    } else {
-      setErrorMessage("Please validate the tenant name before signing in.");
+    try {
+      if (tenantValidated) {
+        await signInWithGoogle();
+        router.push("/");
+      } else {
+        setErrorMessage("Please validate the tenant name before signing in.");
+      }
+    } catch (error) {
+      console.error("Error during Google sign-in: ", error);
+      setErrorMessage("Error during Google sign-in. Please try again.");
     }
   };
 
@@ -81,7 +87,7 @@ export default function SignIn() {
           throw new Error("Error creating tenant.");
         }
 
-        setTenantId(response.id)
+        setTenantId(response.id);
         setTenantValidated(true);
         setErrorMessage("");
       }

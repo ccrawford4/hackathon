@@ -1,10 +1,12 @@
 import React from "react";
-import { Users, Calendar, Database, MenuIcon } from "lucide-react";
+import { Users, Calendar, Database, MenuIcon, LogOut } from "lucide-react";
 import { useTheme } from "../providers/ThemeContext";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "../providers/AppContext";
 
 export default function SideBar() {
   const { toggleSidebar } = useTheme();
+  const { logout } = useAuth();
   const path = usePathname();
   const router = useRouter();
 
@@ -21,6 +23,11 @@ export default function SideBar() {
     toggleSidebar();
     router.push(path);
   };
+
+  const handleLogout = () => {
+    toggleSidebar();
+    logout();
+  }
 
   return (
     <div className="w-64 bg-white border-r">
@@ -60,6 +67,14 @@ export default function SideBar() {
           </ul>
         </div>
       </nav>
+      <div className="border-t border-gray-200 p-4">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center w-full px-2 py-2 text-gray-500 rounded-lg hover:bg-gray-100 text-black"
+        >
+          <LogOut color="black" className="w-5 h-5 mr-2" /> <span className="text-black font-semibold">Log Out</span>
+        </button>
+      </div>
     </div>
   );
 }

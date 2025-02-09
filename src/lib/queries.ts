@@ -6,7 +6,7 @@ import {
   orderByChild,
   equalTo,
 } from "firebase/database";
-import { CustomUser, QueryResult } from "./API";
+import { CustomUser, QueryResult, Tenant } from "./API";
 
 export async function listAll(
   db: Database,
@@ -41,15 +41,36 @@ export async function listAll(
   }
 }
 
+export async function getTenantFromId(
+  db: Database,
+  id: string
+): Promise<Tenant | null> {
+  const tenantRef = ref(db, `tenants/${id}`);
+  const tenantSnapshot = await get(tenantRef);
+  const data = tenantSnapshot.val();
+
+  if (!data) {
+    return null;
+  }
+
+  return { id, data: data as Tenant["data"] };
+}
+
 export async function getTenant(
   db: Database,
   name: string
-): Promise<{ id: string; data: unknown } | null> {
+): Promise<Tenant | null> {
   const tenantRef = ref(db, "tenants");
+  console.log("tenantRef: ", tenantRef);
+  console.log("name: ", name);
   const tenantQuery = query(tenantRef, orderByChild("name"), equalTo(name));
+  console.log("tenantQuery: ", tenantQuery);
 
   const tenantSnapshot = await get(tenantQuery);
+  console.log("tenantSnapshot: ", tenantSnapshot);
   const data = tenantSnapshot.val();
+
+  console.log("data: ", data);
 
   // If no data is found, return null
   if (!data) {
@@ -58,8 +79,7 @@ export async function getTenant(
 
   // Extract the first entry (since equalTo will match only one tenant)
   const [id, tenantData] = Object.entries(data)[0];
-
-  return { id, data: tenantData };
+  return { id, data: tenantData as Tenant["data"] };
 }
 
 export async function getItem(
@@ -79,10 +99,14 @@ export async function getItem(
 }
 export async function getUser(
   db: Database,
-  email: string | null
+  email: string | null,
+  tenantId: string | null
 ): Promise<CustomUser> {
   if (!email) {
     throw new Error("Email must be provided.");
+  }
+  if (!tenantId) {
+    throw new Error("Tenant ID must be provided.");
   }
 
   const userRef = ref(db, "users");
@@ -101,12 +125,19 @@ export async function getUser(
 
     // Check if entries exist and return the first one
     if (entries.length === 0) {
-      return { id: "", data: {} };
+      throw new Error("No users found with that email.");
     }
 
-    const [id, userData] = entries[0];
+    const matchingEntry = entries.find(([, userData]) => 
+      (userData as CustomUser["data"]).tenantId === tenantId
+    );
 
-    const userDataTyped = userData as CustomUser["data"]; // Type assertion
+    if (!matchingEntry) {
+      throw new Error("No users found with that email for the tenant.");
+    }
+
+    const [id, userData] = matchingEntry;
+    const userDataTyped = userData as CustomUser["data"];
 
     // Map userData to the correct structure
     const user: CustomUser = {

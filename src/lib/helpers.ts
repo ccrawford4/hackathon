@@ -78,6 +78,25 @@ export const getMeetingTags = async (
   }
 };
 
+export const getUsers = async (db: Database, tenantId: string): Promise<CustomUser[] | null> => {
+  // Reference to the 'users' node in the database
+  const usersRef = ref(db, "users");
+
+  // Query users where 'tenantId' equals the specified tenantId
+  const usersQuery = query(usersRef, orderByChild("tenantId"), equalTo(tenantId));
+
+  // Get the snapshot of the query result
+  const usersSnapshot = await get(usersQuery);
+
+  // Extract the user objects from the snapshot
+  const users = Object.entries(usersSnapshot.val()).map(([id, userData]) => ({
+    id,
+    data: userData as CustomUser["data"],
+  }));
+
+  return users;
+}
+
 export const getMeetingUsers = async (db: Database, meetingId: string) => {
   // Reference to the 'meetingUsers' node in the database
   const meetingUsersRef = ref(db, "meetingUsers");

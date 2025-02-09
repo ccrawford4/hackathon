@@ -58,6 +58,7 @@ export interface CustomUser {
     lastName?: string;
     email?: string;
     profileURL?: string;
+    createdAt?: string;
   };
 }
 
@@ -89,5 +90,13 @@ export interface Message {
     senderId: string;
     meetingId: string;
     tenantId: string;
+  }
+}
+
+export interface TenantUser {
+  id: string;
+  data: {
+    tenantId: string;
+    userId: string;
   }
 }

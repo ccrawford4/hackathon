@@ -8,7 +8,7 @@ import { getTenantFromId } from "@/lib/queries";
 import * as api from "@/lib/API";
 import { getUsers } from "@/lib/helpers";
 import { Avatar, Modal, TextField } from "@mui/material";
-import { createObject } from "@/lib/mutations";
+import { createObject, deleteObject } from "@/lib/mutations";
 
 export default function Users() {
   const tenantId = useTenantId();
@@ -20,6 +20,7 @@ export default function Users() {
   const [admin, setAdmin] = useState<api.CustomUser>();
   const [error, setError] = useState<string>();
   const [newUserEmail, setNewUserEmail] = useState<string>();
+  const [selectedUsers, setSelectedUsers] = useState<api.CustomUser[]>([]);
 
   const loadPageDetails = async () => {
     const tenant = await getTenantFromId(db, tenantId as string);
@@ -34,7 +35,14 @@ export default function Users() {
       throw new Error("Users not found");
     }
     setAdmin(users.find((user) => user.id === userId));
-    setUsers(users.filter((user) => user.id !== userId));
+    setUsers(
+      users.filter(
+        (user) =>
+          user.id !== userId &&
+          user.data.firstName !== "" &&
+          user.data.lastName !== ""
+      )
+    );
   };
 
   useEffect(() => {
@@ -59,8 +67,6 @@ export default function Users() {
           lastName: "",
           profileURL: "",
           tenantId: tenantId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         },
       });
 
@@ -74,6 +80,39 @@ export default function Users() {
     } catch (e) {
       console.error(e);
       setError("An error occurred. Please try again.");
+    }
+  };
+
+  const handleCheckUser = (user: api.CustomUser) => {
+    if (
+      selectedUsers.filter((findUser) => findUser.id === user.id).length > 0
+    ) {
+      setSelectedUsers(
+        selectedUsers.filter((findUser) => findUser.id !== user.id)
+      );
+    } else {
+      setSelectedUsers([...selectedUsers, user]);
+    }
+  };
+
+  const handleRemoveUsers = async () => {
+    const confirm = window.confirm(
+      "Are you sure you want to remove the selected users?"
+    );
+    if (!confirm) {
+      return;
+    }
+    try {
+      const promises = selectedUsers.map((user) => {
+        return deleteObject(db, "users", user.id);
+      });
+
+      await Promise.all(promises);
+      setSelectedUsers([]);
+      loadPageDetails();
+    } catch (e) {
+      console.error(e);
+      alert("An error occurred. Please try again.");
     }
   };
 
@@ -131,9 +170,7 @@ export default function Users() {
         <h1 className="text-2xl text-black font-semibold mb-2">
           User management
         </h1>
-        <p className="text-gray-600 mb-8">
-          Manage your team members here.
-        </p>
+        <p className="text-gray-600 mb-8">Manage your team members here.</p>
 
         {/* Controls */}
         <div className="flex justify-between items-center mb-6 text-black">
@@ -142,6 +179,14 @@ export default function Users() {
             <span className="text-gray-500">{users.length}</span>
           </div>
           <div className="flex items-center gap-3">
+            {selectedUsers.length > 0 && (
+              <button
+                onClick={handleRemoveUsers}
+                className="px-4 py-2 bg-red-200 hover:bg-red-300 text-black rounded-lg"
+              >
+                Remove Selected Users
+              </button>
+            )}
             <button
               onClick={() => setOpenAddUserModal(true)}
               className="px-4 py-2 bg-black text-white rounded-lg"
@@ -157,7 +202,18 @@ export default function Users() {
             <thead>
               <tr className="border-b text-sm">
                 <th className="p-4 text-left w-8">
-                  <input type="checkbox" className="rounded" />
+                  <input
+                    onClick={() => {
+                      if (selectedUsers.length === users.length) {
+                        setSelectedUsers([]);
+                      } else {
+                        setSelectedUsers(users);
+                      }
+                    }}
+                    type="checkbox"
+                    className="rounded"
+                    checked={selectedUsers.length === users.length}
+                  />
                 </th>
                 <th className="p-4 text-left font-medium text-gray-600">
                   Users
@@ -168,7 +224,16 @@ export default function Users() {
               {users.map((user, index) => (
                 <tr key={user.id} className="border-b hover:bg-gray-50">
                   <td className="p-4">
-                    <input type="checkbox" className="rounded" />
+                    <input
+                      checked={
+                        selectedUsers.filter(
+                          (findUser) => findUser.id === user.id
+                        ).length > 0
+                      }
+                      onClick={() => handleCheckUser(user)}
+                      type="checkbox"
+                      className="rounded"
+                    />
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-3">

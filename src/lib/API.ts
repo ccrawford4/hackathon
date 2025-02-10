@@ -59,6 +59,7 @@ export interface CustomUser {
     email?: string;
     profileURL?: string;
     createdAt?: string;
+    admin?: boolean;
   };
 }
 

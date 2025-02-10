@@ -67,6 +67,7 @@ export default function Users() {
           lastName: "",
           profileURL: "",
           tenantId: tenantId,
+          admin: false,
         },
       });
 

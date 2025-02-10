@@ -17,13 +17,13 @@ import { auth, database } from "@/lib/firebase";
 import { Database } from "firebase/database";
 import { User } from "firebase/auth";
 import { getUser } from "@/lib/queries";
-import { updateObject } from "@/lib/mutations";
+import { createObject, updateObject } from "@/lib/mutations";
 import * as api from "@/lib/API";
 
 interface AppContextType {
   loading: boolean;
   user: User | null;
-  signInWithGoogle: () => Promise<api.CustomUser>;
+  signInWithGoogle: (registering: boolean) => Promise<api.CustomUser>;
   logout: () => Promise<void>;
   database: Database;
   tenantId: string | null;
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (registering: boolean = false) => {
     const provider = new GoogleAuthProvider();
 
     try {
@@ -110,7 +110,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const firstName = nameParts[0] || "";
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
-      const userObject = await getUser(database, email, tenantId);
+      let userObject: api.CustomUser | null = null;
+
+      // If registering, create a new user object which will act as the admin for the tenant
+      if (registering) {
+        userObject = await createObject(database, "users", {
+          data: {
+            email,
+            firstName,
+            lastName,
+            profileURL: photoURL,
+            tenantId,
+            admin: true,
+          },
+        }) as api.CustomUser;
+      } else {
+        userObject = await getUser(database, email, tenantId);
+      }
 
       // If no user was found for this tenant, then throw an error
       if (!userObject || userObject.id === "") {

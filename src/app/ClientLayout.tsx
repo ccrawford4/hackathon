@@ -1,8 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTheme } from "./providers/ThemeContext";
 import SideBar from "./components/SideBar";
+import * as api from "@/lib/API";
+import { getObject } from "@/lib/queries";
+import { useAuth, useDatabase } from "./providers/AppContext";
 
 export default function ClientLayout({
   children,
@@ -10,6 +13,24 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const { showSidebar, toggleSidebar } = useTheme();
+  const { userId } = useAuth();
+  const db = useDatabase();
+  const [user, setUser] = useState<api.CustomUser | null>(null);
+
+  const loadUser = async () => {
+    try {
+      const user = await getObject(db, "users", userId) as api.CustomUser;
+      console.log("User: ", user);
+      console.log("User ID: ", userId);
+      setUser(user);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    loadUser();
+  }, []);
 
   return (
     <div className="relative h-screen">
@@ -26,7 +47,7 @@ export default function ClientLayout({
           showSidebar ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <SideBar />
+        <SideBar user={user} />
       </div>
 
       <main className="w-full">{children}</main>

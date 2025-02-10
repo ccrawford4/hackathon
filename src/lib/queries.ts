@@ -8,6 +8,26 @@ import {
 } from "firebase/database";
 import { CustomUser, QueryResult, Tenant } from "./API";
 
+
+export async function getObject(
+  db: Database,
+  collection: string,
+  id: string | null
+): Promise<QueryResult> {
+  if (!id) {
+    throw new Error("ID must be provided to fetch the object.");
+  }
+  const databaseRef = ref(db, `${collection}/${id}`);
+  const snapshot = await get(databaseRef);
+
+  if (snapshot.exists()) {
+    const data = snapshot.val();
+    return { id: id, data: data };
+  } else {
+    return { id: id, data: {} };
+  }
+}
+
 export async function listAll(
   db: Database,
   collection: string,

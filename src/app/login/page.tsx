@@ -27,6 +27,7 @@ export default function SignIn() {
   const [tenantName, setTenantName] = useState<string>("");
   const [tenantValidated, setTenantValidated] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [registerTenant, setRegisterTenant] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -58,7 +59,7 @@ export default function SignIn() {
   const handleSignInFlow = async () => {
     try {
       if (tenantValidated) {
-        await signInWithGoogle();
+        await signInWithGoogle(registerTenant);
         router.push("/");
       } else {
         setErrorMessage("Please validate the tenant name before signing in.");
@@ -92,6 +93,7 @@ export default function SignIn() {
         setTenantId(response.id);
         setTenantValidated(true);
         setErrorMessage("");
+        setRegisterTenant(true);
       }
     } catch (error) {
       console.error("Error registering tenant: ", error);

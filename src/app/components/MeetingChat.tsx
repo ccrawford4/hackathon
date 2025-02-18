@@ -17,6 +17,7 @@ import {
 import { useTenantId, useUserId } from "../providers/AppContext";
 import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 
+
 interface MeetingChatProps {
   title: string;
   messages: Message[];
